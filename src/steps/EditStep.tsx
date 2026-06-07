@@ -384,6 +384,11 @@ export function EditStep({
     id: string; name: string; count: number;
   } | null>(null);
 
+  // Confirm-delete state for individual rows
+  const [confirmDeletePoint, setConfirmDeletePoint] = useState<{
+    groupId: string; pointId: string; name: string;
+  } | null>(null);
+
   // Confirm-clear-column-data state
   const [confirmClearField, setConfirmClearField] = useState<{
     key: string; label: string; count: number;
@@ -631,11 +636,21 @@ export function EditStep({
     const activeData = active.data.current as { type: string; groupId?: string };
 
     if (activeData.type === 'group') {
-      // Reorder groups
+      // Reorder groups. `over` may land on another group's header OR on one of
+      // its point rows (closestCenter doesn't know to prefer group-level
+      // droppables over nested point ones), so resolve the target group from
+      // whichever we hit, the same way onDragOver resolves point drop targets.
+      const overData = over.data.current as { type?: string; groupId?: string } | undefined;
+      const overGroupId = overData?.type === 'group'
+        ? String(over.id)
+        : overData?.type === 'point'
+          ? overData.groupId ?? null
+          : null;
+      if (!overGroupId) return;
       setGroups((prev) => {
         const oldIdx = prev.findIndex((g) => g.id === String(active.id));
-        const newIdx = prev.findIndex((g) => g.id === String(over.id));
-        if (oldIdx < 0 || newIdx < 0) return prev;
+        const newIdx = prev.findIndex((g) => g.id === overGroupId);
+        if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return prev;
         return arrayMove(prev, oldIdx, newIdx);
       });
     } else if (activeData.type === 'point') {
@@ -702,6 +717,13 @@ export function EditStep({
 
   const backLabel = source === 'xml' ? '← Back to Import' : '← Back to Mapping';
 
+  // Deletions here only touch in-memory state, so the original data is never
+  // actually lost: it still lives in the imported file. Confirm dialogs spell
+  // out exactly how to get it back, so deleting doesn't feel permanent.
+  const recoveryNote = source === 'xml'
+    ? 'Going back to Import and reloading the template restores the original data.'
+    : 'Going back to Mapping and applying it again restores the original data.';
+
   return (
     <div className="flex flex-col grow overflow-hidden">
       {/* Toolbar */}
@@ -738,7 +760,7 @@ export function EditStep({
 
         {/* Row 3 — table controls: counter, search, column visibility, address shift */}
         <div className="toolbar-row toolbar-row-table">
-          <span className="toolbar-meta">{totalPoints} registers</span>
+          
 
           <input
             type="search"
@@ -843,7 +865,14 @@ export function EditStep({
                   }}
                   onUpdatePoint={(pid, key, val) => updatePoint(group.id, pid, key, val)}
                   onCommitPoint={(pid, key) => commitPointField(group.id, pid, key)}
-                  onDeletePoint={(pid) => deletePoint(group.id, pid)}
+                  onDeletePoint={(pid) => {
+                    const point = group.points.find((p) => p.id === pid);
+                    setConfirmDeletePoint({
+                      groupId: group.id,
+                      pointId: pid,
+                      name: point?.data.point_name?.trim() || '(unnamed point)',
+                    });
+                  }}
                   onDuplicatePoint={(pid) => duplicatePoint(group.id, pid)}
                 />
               ))}
@@ -867,12 +896,30 @@ export function EditStep({
               message={
                 <>
                   Delete group &ldquo;{confirmDelete.name}&rdquo; and its {confirmDelete.count} row{confirmDelete.count !== 1 ? 's' : ''}?
-                  {' '}This cannot be undone.
+                  {' '}This cannot be undone here. {recoveryNote}
                 </>
               }
               confirmLabel="Delete"
               onConfirm={() => { deleteGroup(confirmDelete.id); setConfirmDelete(null); }}
               onCancel={() => setConfirmDelete(null)}
+            />
+          )}
+
+          {/* Confirm delete-row dialog */}
+          {confirmDeletePoint && (
+            <ConfirmDialog
+              message={
+                <>
+                  Delete row &ldquo;{confirmDeletePoint.name}&rdquo;?
+                  {' '}This cannot be undone here. {recoveryNote}
+                </>
+              }
+              confirmLabel="Delete"
+              onConfirm={() => {
+                deletePoint(confirmDeletePoint.groupId, confirmDeletePoint.pointId);
+                setConfirmDeletePoint(null);
+              }}
+              onCancel={() => setConfirmDeletePoint(null)}
             />
           )}
 
@@ -934,6 +981,7 @@ export function EditStep({
         </DndContext>
 
       </div>
+      <span className="toolbar-meta">{totalPoints} registers</span>
       <div className="step-footer">
         <span
           style={{
