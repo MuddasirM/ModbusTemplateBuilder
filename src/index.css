@@ -552,13 +552,27 @@ a:hover { color: var(--c-accent-hover); }
 /* ── Step toolbar (Edit step top bar) ───────────────────── */
 .step-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  flex-direction: column;
   gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--c-border-muted);
   margin-bottom: 12px;
   flex-shrink: 0;
+}
+
+.toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.toolbar-row-nav {
+  align-items: center;
+}
+
+.toolbar-row-meta:empty {
+  display: none;
 }
 
 .toolbar-meta {
@@ -818,6 +832,36 @@ pre.xml-preview {
   border-bottom: 1px solid var(--c-border-muted);
   margin-bottom: 10px;
   flex-shrink: 0;
+}
+
+/* ── Export log (Preview step, terminal-style notifications) ─ */
+.export-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border-muted);
+  background: var(--c-surface-raised);
+  font-size: 0.75rem;
+  color: var(--c-accent);
+  flex-shrink: 0;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.export-log-line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  animation-name: export-type;
+  animation-timing-function: steps(var(--chars), end);
+  animation-fill-mode: forwards;
+}
+
+@keyframes export-type {
+  to { width: calc(var(--chars) * 1ch); }
 }
 
 /* ── Separator ───────────────────────────────────────────── */
@@ -1516,7 +1560,8 @@ pre.xml-preview {
   .register-table thead th .col-clear-btn,
   .help-col,
   .hint-col-cycle,
-  .scan-bead {
+  .scan-bead,
+  .export-log-line {
     transition: none !important;
     animation: none !important;
   }
@@ -1527,5 +1572,11 @@ pre.xml-preview {
     width: 100%;
     background: var(--c-accent);
     opacity: 0.5;
+  }
+
+  /* Show the line fully instead of leaving it clipped at width: 0. */
+  .export-log-line {
+    width: auto;
+    overflow: visible;
   }
 }

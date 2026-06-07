@@ -68,7 +68,7 @@ function ConfirmDialog({ message, confirmLabel, onConfirm, onCancel }: ConfirmDi
     if (!rect) return;
     if (
       e.clientX < rect.left || e.clientX > rect.right ||
-      e.clientY < rect.top  || e.clientY > rect.bottom
+      e.clientY < rect.top || e.clientY > rect.bottom
     ) onCancel();
   }
 
@@ -151,6 +151,7 @@ interface PointRowProps {
   rowNum: number;
   errors: Record<string, string> | undefined;
   onUpdate: (key: string, val: string) => void;
+  onCommit: (key: string) => void;
   onDelete: () => void;
   onDuplicate: () => void;
   overlay?: boolean;
@@ -163,6 +164,7 @@ const PointRow = memo(function PointRow({
   rowNum,
   errors,
   onUpdate,
+  onCommit,
   onDelete,
   onDuplicate,
   overlay = false,
@@ -197,6 +199,7 @@ const PointRow = memo(function PointRow({
                 className="field-select"
                 value={point.data[f.key] ?? ''}
                 onChange={(e) => onUpdate(f.key, e.target.value)}
+                onBlur={() => onCommit(f.key)}
                 title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
               >
                 {choiceOpts.map((c) => (
@@ -208,6 +211,7 @@ const PointRow = memo(function PointRow({
                 className="field-input"
                 value={point.data[f.key] ?? ''}
                 onChange={(e) => onUpdate(f.key, e.target.value)}
+                onBlur={() => onCommit(f.key)}
                 title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
               />
             )}
@@ -243,6 +247,7 @@ interface GroupSectionProps {
   onRename: (name: string) => void;
   onDelete: () => void;
   onUpdatePoint: (pointId: string, key: string, val: string) => void;
+  onCommitPoint: (pointId: string, key: string) => void;
   onDeletePoint: (pointId: string) => void;
   onDuplicatePoint: (pointId: string) => void;
   overlay?: boolean;
@@ -258,6 +263,7 @@ function GroupSection({
   onRename,
   onDelete,
   onUpdatePoint,
+  onCommitPoint,
   onDeletePoint,
   onDuplicatePoint,
   overlay = false,
@@ -326,6 +332,7 @@ function GroupSection({
             rowNum={globalRowOffset + group.points.indexOf(point) + 1}
             errors={pointErrors?.[point.id]}
             onUpdate={(key, val) => onUpdatePoint(point.id, key, val)}
+            onCommit={(key) => onCommitPoint(point.id, key)}
             onDelete={() => onDeletePoint(point.id)}
             onDuplicate={() => onDuplicatePoint(point.id)}
           />
@@ -423,8 +430,15 @@ export function EditStep({
   );
 
   // ── Group mutations ───────────────────────────────────────────────────────
+  // Renaming a group must also update every point's group_name field, so the
+  // tree label and the exported data never disagree (the other half of this
+  // sync lives in commitPointField below, for edits coming from the row side).
   const renameGroup = useCallback((groupId: string, name: string) => {
-    setGroups((prev) => prev.map((g) => g.id === groupId ? { ...g, name } : g));
+    setGroups((prev) => prev.map((g) => g.id !== groupId ? g : {
+      ...g,
+      name,
+      points: g.points.map((p) => ({ ...p, data: { ...p.data, group_name: name } })),
+    }));
   }, []);
 
   const deleteGroup = useCallback((groupId: string) => {
@@ -448,6 +462,34 @@ export function EditStep({
         ),
       },
     ));
+  }, []);
+
+  // Committing a row's Group cell (on blur, so the row doesn't jump groups on
+  // every keystroke) moves the point into the group matching its new value:
+  // joins an existing group of that name, or creates one. The other half of
+  // this sync (renaming a group updates its rows) lives in renameGroup above.
+  const commitPointField = useCallback((groupId: string, pointId: string, key: string) => {
+    if (key !== 'group_name') return;
+    setGroups((prev) => {
+      const source = prev.find((g) => g.id === groupId);
+      const point = source?.points.find((p) => p.id === pointId);
+      if (!source || !point) return prev;
+
+      const name = point.data.group_name ?? '';
+      if (source.name === name) return prev;
+
+      const target = prev.find((g) => g.name === name);
+      const withoutPoint = prev.map((g) =>
+        g.id !== groupId ? g : { ...g, points: g.points.filter((p) => p.id !== pointId) },
+      );
+
+      if (target) {
+        return withoutPoint.map((g) =>
+          g.id !== target.id ? g : { ...g, points: [...g.points, point] },
+        );
+      }
+      return [...withoutPoint, { id: newId(), name, points: [point] }];
+    });
   }, []);
 
   const deletePoint = useCallback((groupId: string, pointId: string) => {
@@ -642,15 +684,15 @@ export function EditStep({
   const searchActive = searchQueryNorm !== '';
   const pointMatches = useCallback((p: PointState) =>
     fields.some((f) => String(p.data[f.key] ?? '').toLowerCase().includes(searchQueryNorm)),
-  [fields, searchQueryNorm]);
+    [fields, searchQueryNorm]);
 
   // Disabled reason for the generate button (feature 3)
   const generateDisabledReason =
     totalPoints === 0
       ? 'No rows to export'
       : errorSummary.length > 0
-      ? `${errorSummary.length} cell${errorSummary.length !== 1 ? 's' : ''} have errors; fix them to export`
-      : null;
+        ? `${errorSummary.length} cell${errorSummary.length !== 1 ? 's' : ''} have errors; fix them to export`
+        : null;
 
   // Active overlay data
   const activeGroup = activeId ? groups.find((g) => g.id === activeId) : null;
@@ -664,70 +706,63 @@ export function EditStep({
     <div className="flex flex-col grow overflow-hidden">
       {/* Toolbar */}
       <div className="step-toolbar">
-        <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={onBack}>
-          {backLabel}
-        </button>
+        {/* Row 1 — navigation: Back (left), Preview XML (right) */}
+        <div className="toolbar-row toolbar-row-nav">
+          <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={onBack}>
+            {backLabel}
+          </button>
 
-        {metadataFields.map((m) => {
-          const width = m.inputType === 'string' ? 200 : m.inputType === 'date' ? 130 : 90;
-          const inputType = m.inputType === 'string' ? 'text' : m.inputType;
-          return (
-            <div key={m.key} className="field-group" style={{ minWidth: width - 40 }}>
-              <label className="field-label" htmlFor={`tpl-meta-${m.key}`}>{m.label}</label>
-              <input
-                id={`tpl-meta-${m.key}`}
-                className="field-input"
-                type={inputType}
-                value={String(meta[m.key] ?? '')}
-                style={{ width }}
-                onChange={(e) => updateMeta(m.key, e.target.value)}
-              />
-            </div>
-          );
-        })}
 
-        <span className="toolbar-meta">{totalPoints} registers</span>
-
-        <input
-          type="search"
-          className="field-input search-input"
-          placeholder="Search rows…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          aria-label="Search rows"
-        />
-
-        <ColumnVisibilityMenu
-          fields={fields}
-          visibleFields={visibleFields}
-          onToggle={(key) => setVisibleFields(
-            visibleFields.includes(key) ? visibleFields.filter((k) => k !== key) : [...visibleFields, key],
-          )}
-        />
-
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="toolbar-meta">Addresses:</span>
-          <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(-1)} title="Shift all addresses by -1">−1</button>
-          <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(1)} title="Shift all addresses by +1">+1</button>
         </div>
 
-        <span
-          style={{
-            marginLeft: 'auto',
-            ...(generateDisabledReason ? { cursor: 'not-allowed' } : {}),
-          }}
-          title={generateDisabledReason ?? undefined}
-        >
-          <button
-            type="button"
-            className="btn btn-primary shrink-0"
-            disabled={!!generateDisabledReason}
-            style={generateDisabledReason ? { pointerEvents: 'none' } : undefined}
-            onClick={onGenerate}
-          >
-            Preview XML →
-          </button>
-        </span>
+        {/* Row 2 — template metadata (Template Name, Version, ...) */}
+        <div className="toolbar-row toolbar-row-meta">
+          {metadataFields.map((m) => {
+            const width = m.inputType === 'string' ? 200 : m.inputType === 'date' ? 130 : 90;
+            const inputType = m.inputType === 'string' ? 'text' : m.inputType;
+            return (
+              <div key={m.key} className="field-group" style={{ minWidth: width - 40 }}>
+                <label className="field-label" htmlFor={`tpl-meta-${m.key}`}>{m.label}</label>
+                <input
+                  id={`tpl-meta-${m.key}`}
+                  className="field-input"
+                  type={inputType}
+                  value={String(meta[m.key] ?? '')}
+                  style={{ width }}
+                  onChange={(e) => updateMeta(m.key, e.target.value)}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Row 3 — table controls: counter, search, column visibility, address shift */}
+        <div className="toolbar-row toolbar-row-table">
+          <span className="toolbar-meta">{totalPoints} registers</span>
+
+          <input
+            type="search"
+            className="field-input search-input"
+            placeholder="Search rows…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search rows"
+          />
+
+          <ColumnVisibilityMenu
+            fields={fields}
+            visibleFields={visibleFields}
+            onToggle={(key) => setVisibleFields(
+              visibleFields.includes(key) ? visibleFields.filter((k) => k !== key) : [...visibleFields, key],
+            )}
+          />
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="toolbar-meta">Addresses:</span>
+            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(-1)} title="Shift all addresses by -1">−1</button>
+            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(1)} title="Shift all addresses by +1">+1</button>
+          </div>
+        </div>
       </div>
 
       {/* Error summary */}
@@ -807,6 +842,7 @@ export function EditStep({
                     }
                   }}
                   onUpdatePoint={(pid, key, val) => updatePoint(group.id, pid, key, val)}
+                  onCommitPoint={(pid, key) => commitPointField(group.id, pid, key)}
                   onDeletePoint={(pid) => deletePoint(group.id, pid)}
                   onDuplicatePoint={(pid) => duplicatePoint(group.id, pid)}
                 />
@@ -866,11 +902,12 @@ export function EditStep({
                   globalRowOffset={0}
                   searchActive={false}
                   pointMatches={pointMatches}
-                  onRename={() => {}}
-                  onDelete={() => {}}
-                  onUpdatePoint={() => {}}
-                  onDeletePoint={() => {}}
-                  onDuplicatePoint={() => {}}
+                  onRename={() => { }}
+                  onDelete={() => { }}
+                  onUpdatePoint={() => { }}
+                  onCommitPoint={() => { }}
+                  onDeletePoint={() => { }}
+                  onDuplicatePoint={() => { }}
                   overlay
                 />
               </table>
@@ -884,9 +921,10 @@ export function EditStep({
                     columns={columns}
                     rowNum={0}
                     errors={pointErrors?.[activePoint.id]}
-                    onUpdate={() => {}}
-                    onDelete={() => {}}
-                    onDuplicate={() => {}}
+                    onUpdate={() => { }}
+                    onCommit={() => { }}
+                    onDelete={() => { }}
+                    onDuplicate={() => { }}
                     overlay
                   />
                 </tbody>
@@ -894,6 +932,26 @@ export function EditStep({
             )}
           </DragOverlay>
         </DndContext>
+
+      </div>
+      <div className="step-footer">
+        <span
+          style={{
+            marginLeft: 'auto',
+            ...(generateDisabledReason ? { cursor: 'not-allowed' } : {}),
+          }}
+          title={generateDisabledReason ?? undefined}
+        >
+          <button
+            type="button"
+            className="btn btn-primary shrink-0"
+            disabled={!!generateDisabledReason}
+            style={generateDisabledReason ? { pointerEvents: 'none' } : undefined}
+            onClick={onGenerate}
+          >
+            Preview XML →
+          </button>
+        </span>
       </div>
     </div>
   );

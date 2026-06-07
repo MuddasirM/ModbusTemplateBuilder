@@ -171,12 +171,10 @@ export function MappingStep({
       </div>
 
       <div className="step-footer">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
-          ← Back
-        </button>
         <button
           type="button"
           className="btn btn-primary"
+          style={{ marginLeft: 'auto' }}
           onClick={() => {
             const required = fields
               .filter((f) => f.required && !mapping[f.key])

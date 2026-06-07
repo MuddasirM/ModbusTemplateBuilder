@@ -19,9 +19,23 @@ function countOccurrences(s: string, needle: string): number {
   return s.split(needle).length - 1;
 }
 
+interface ExportLogEntry {
+  text: string;
+}
+
 export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, visibleFields, omittedGroups, onBack, onNew }: Props) {
   const [view, setView] = useState<'xml' | 'sheet'>('xml');
   const [copied, setCopied] = useState(false);
+
+  // Session-only export log (terminal-style, typed-on-screen): cleared on
+  // navigation away or refresh, since this component unmounts with the step.
+  const [exportLog, setExportLog] = useState<ExportLogEntry[]>([]);
+  const exported = exportLog.length > 0;
+
+  function logExport(format: string) {
+    const label = templateLabel.trim() || 'Untitled template';
+    setExportLog((prev) => [...prev, { text: `${label} was exported as ${format}: transformation successful.` }]);
+  }
 
   const points = countOccurrences(xml, '<Point ');
   const xmlGroups = countOccurrences(xml, '<Group ');
@@ -48,6 +62,7 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
     a.download = `${templateLabel.replace(/ /g, '_') || 'template'}.xml`;
     a.click();
     URL.revokeObjectURL(url);
+    logExport('XML');
   }
 
   async function exportExcel() {
@@ -74,6 +89,7 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
     a.download = `${templateLabel.replace(/ /g, '_') || 'template'}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
+    logExport('Excel (.xlsx)');
   }
 
   return (
@@ -140,10 +156,35 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
         </div>
       )}
 
+      {/* Export log: terminal-style, typed-on-screen, append-only, session-only */}
+      {exported && (
+        <div className="export-log" aria-live="polite">
+          {exportLog.map((entry, i) => {
+            const line = `> ${entry.text}`;
+            return (
+              <div
+                key={i}
+                className="export-log-line"
+                style={{
+                  '--chars': line.length,
+                  animationDuration: `${Math.min(line.length * 0.025, 2)}s`,
+                } as React.CSSProperties}
+              >
+                {line}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Footer */}
       <div className="step-footer">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onNew}>
-          + New
+        <button
+          type="button"
+          className={`btn btn-sm${exported ? ' btn-primary' : ' btn-ghost'}`}
+          onClick={onNew}
+        >
+          {exported ? '+ New template →' : '+ New'}
         </button>
         <div className="flex gap-2">
           {view === 'xml' ? (
