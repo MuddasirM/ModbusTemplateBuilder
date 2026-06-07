@@ -1,5 +1,5 @@
 // Spreadsheet-specific transforms, porting normalize_dtype, parse_hex_addr,
-// coeff_to_scaling from argos_modbus_builder.py.
+// and coeff_to_scaling from the original implementation.
 
 import { DTYPE_MAP } from './fields';
 import { isNa, type CellValue } from '../../row';

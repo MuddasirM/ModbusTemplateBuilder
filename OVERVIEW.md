@@ -213,10 +213,10 @@ The entire conversion pipeline (header detection, column mapping, row
 extraction, data transforms, validation, XML serialisation) runs in the
 browser. No data is transmitted anywhere.
 
-The TypeScript implementation is a direct port of the Python reference tool
-(`argos_modbus_builder.py`). A parity test suite asserts that the TS output
-matches the Python oracle byte-for-byte for a set of representative
-fixtures, including edge cases in the coefficient inversion and hex address
+The TypeScript implementation is a direct port of an earlier Python reference
+tool. A parity test suite asserts that the TS output matches a set of
+representative fixtures byte-for-byte, including edge cases in the
+coefficient inversion and hex address
 parsing logic.
 
 ---

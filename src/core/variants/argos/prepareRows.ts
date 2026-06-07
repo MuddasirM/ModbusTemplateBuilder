@@ -1,4 +1,4 @@
-// Core CSV/Excel extraction, porting prepare_rows from argos_modbus_builder.py.
+// Core CSV/Excel extraction, porting prepare_rows from the original implementation.
 // Input `grid` mirrors pandas read_*(header=None, dtype=str): rows of raw string
 // cells, with null for empty cells (pandas NaN).
 

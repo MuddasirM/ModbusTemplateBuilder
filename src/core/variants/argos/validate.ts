@@ -1,4 +1,4 @@
-// Row validation, porting validate_row from argos_modbus_builder.py.
+// Row validation, porting validate_row from the original implementation.
 // Error messages are byte-identical (note en-dash "–" and em-dash "—").
 
 import { ARGOS_FIELDS, VALID_DTYPES, VALID_REG_TYPES } from './fields';

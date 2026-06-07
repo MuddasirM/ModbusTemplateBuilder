@@ -1,4 +1,4 @@
-// XML builder, porting build_xml from argos_modbus_builder.py. Instead of going
+// XML builder, porting build_xml from the original implementation. Instead of going
 // through a DOM + minidom pretty-printer, we emit the exact string directly
 // (3-space indent, fixed attribute order, self-closed empties, reset id/uid),
 // which guarantees byte-for-byte parity with the Python output.

@@ -1,5 +1,5 @@
 // Small helpers that replicate Python numeric/formatting semantics exactly, so
-// the ported logic matches argos_modbus_builder.py byte-for-byte.
+// the ported logic matches the original implementation byte-for-byte.
 
 /** Python 3 round(): round-half-to-even, returning an integer. */
 export function pyRound(x: number): number {

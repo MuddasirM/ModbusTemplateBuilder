@@ -1,4 +1,4 @@
-// XML import, porting parse_argos_xml from argos_modbus_builder.py using the
+// XML import, porting parse_argos_xml from the original implementation using the
 // browser DOMParser. Namespace-tolerant via Element.localName. id/uid are
 // ignored (reset on re-export).
 

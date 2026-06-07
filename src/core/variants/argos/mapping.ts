@@ -1,5 +1,5 @@
 // Column auto-mapping + header detection, porting _norm, _fuzzy, auto_map,
-// detect_header_row from argos_modbus_builder.py.
+// and detect_header_row from the original implementation.
 
 import { ARGOS_FIELDS, COL_ALIASES, COL_ADDR, COL_NAME } from './fields';
 import { isNa, type CellValue } from '../../row';

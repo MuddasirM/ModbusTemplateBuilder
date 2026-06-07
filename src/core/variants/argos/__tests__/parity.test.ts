@@ -1,6 +1,6 @@
-// Parity tests: every expectation here was produced by the REAL Python
-// implementation (web/scripts/gen_fixtures.py). If the TS port drifts from
-// argos_modbus_builder.py, these fail.
+// Parity tests: every expectation here was produced by the original Python
+// implementation, captured in fixtures/parity.json. If the TS port drifts
+// from that implementation's exact output, these fail.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

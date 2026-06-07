@@ -44,8 +44,9 @@ that aren't written down anywhere else.
 `readSpreadsheet → fileColsOf/detectHeaderRow → autoMap → prepareRows → buildXml`
 
 `src/core/variants/argos/__tests__/parity.test.ts` asserts the TS output
-matches a set of pre-generated fixtures (`scripts/gen_fixtures.py`)
-byte-for-byte. **Don't simplify or "clean up" `format.ts`** (`pyRound`,
+matches a set of pre-generated fixtures
+(`src/core/__tests__/fixtures/parity.json`) byte-for-byte. **Don't simplify
+or "clean up" `format.ts`** (`pyRound`,
 `formatG`, `pyInt`/`pyFloat`, `xmlEscape`): their exact, sometimes-quirky
 behavior (Python-style rounding, `%g`-style formatting, `%` escaped to
 `%25`) is the contract the fixtures lock in, not an implementation detail.

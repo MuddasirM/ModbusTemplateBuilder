@@ -1,5 +1,5 @@
 // 1:1 port of the field definitions, column constants, and alias map from
-// argos_modbus_builder.py. Keep these byte-identical to preserve behavior.
+// the original implementation. Keep these byte-identical to preserve behavior.
 
 export interface ArgosField {
   key: string;
