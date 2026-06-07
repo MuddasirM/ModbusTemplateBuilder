@@ -18,36 +18,36 @@ The wizard moves data through four steps, all driven by the selected
 **variant bundle** (`src/core/variants/<id>/`, registered in
 [`core/variants/registry.ts`](src/core/variants/registry.ts)):
 
-1. **Import** — pick an output format, then drop a `.csv`/`.xlsx` register
+1. **Import** - pick an output format, then drop a `.csv`/`.xlsx` register
    map, or (for variants that declare a `parse` step) an existing export to
    edit directly. `readSpreadsheet` (PapaParse for `.csv`, ExcelJS for
    `.xlsx`) produces a raw `CellValue[][]` grid mirroring
    `pandas.read_*(header=None, dtype=str)`: strings, with `null` for empty
    cells.
-2. **Map** — `autoMap` matches each of the variant's declared `fields` to a
+2. **Map** - `autoMap` matches each of the variant's declared `fields` to a
    column in that grid, first via the variant's alias table
    (`norm(columnName) → fieldKey`), then by fuzzy substring match against the
    field's key/label. Unmapped fields fall back to a per-field default value
    applied to every row.
-3. **Edit** — `prepareRows` slices off the header row, walks the data rows,
+3. **Edit** - `prepareRows` slices off the header row, walks the data rows,
    and emits the variant's canonical `Group[]` (each `{ name, points: Row[] }`,
    where `Row` is `Record<fieldKey, string>`). `App.tsx` wraps these in
-   `GroupState`/`PointState` — adding stable string ids via the `uid()`
-   counter for drag-and-drop and React keys — before handing them to
+   `GroupState`/`PointState` - adding stable string ids via the `uid()`
+   counter for drag-and-drop and React keys - before handing them to
    `EditStep`. Cell edits mutate this state directly; `variant.validateRow(row)`
    runs on blur and gates the transition to Preview.
-4. **Preview / Export** — `stateToCore` strips the ids back down to plain
+4. **Preview / Export** - `stateToCore` strips the ids back down to plain
    `Group[]`/`Row[]`. `variant.serialize(groups, meta)` turns that, plus the
    template-level `meta` (one value per declared `MetadataFieldDef`), into
    the final text. `PreviewStep` then offers copy/download of that text (XML
    for Argos) alongside a spreadsheet view and `.xlsx` export driven by
    `variant.spreadsheetColumns`.
 
-Generic shapes — `CellValue`, `Row`, `Group`, `isNa` — live in
+Generic shapes - `CellValue`, `Row`, `Group`, `isNa` - live in
 [`core/row.ts`](src/core/row.ts): the "prepared row" form every variant's
 data passes through regardless of output target. Everything
 variant-specific (field schema, validation, serialization, template
-metadata, spreadsheet columns, and — for Argos — the ANPL row transforms)
+metadata, spreadsheet columns, and - for Argos - the ANPL row transforms)
 lives under `core/variants/<id>/`.
 
 A `✉` button in the header, beside the theme toggle and the help icon, opens
@@ -67,26 +67,26 @@ are all driven generically by the `VariantBundle` interface
 ([`core/variants/types.ts`](src/core/variants/types.ts)).
 
 1. **Create `src/core/variants/<id>/`** and declare a `VariantBundle`:
-   - `id`, `label` — shown in the Import step's output-format dropdown
-   - `hierarchy` — `'nested'` (`Group[] → Row[]`, the only kind built today)
+   - `id`, `label` - shown in the Import step's output-format dropdown
+   - `hierarchy` - `'nested'` (`Group[] → Row[]`, the only kind built today)
      or `'flat'` (reserved for a future ungrouped format)
-   - `fields: FieldDef[]` — the editable register/point schema: `key`,
+   - `fields: FieldDef[]` - the editable register/point schema: `key`,
      `label`, `required`, `'text' | 'choice'` (+ `choices`), `default`, `width`
-   - `aliases: Record<string, string>` — `norm(columnName) → fieldKey`, used
+   - `aliases: Record<string, string>` - `norm(columnName) → fieldKey`, used
      by `autoMap` on import (see `norm`/`fuzzy` in
      [`argos/mapping.ts`](src/core/variants/argos/mapping.ts) for the exact
      normalisation your alias keys need to match)
-   - `metadata: MetadataFieldDef[]` — template-level fields (e.g. name,
+   - `metadata: MetadataFieldDef[]` - template-level fields (e.g. name,
      version) rendered as inputs on the Edit screen and passed through to
      `serialize` as `meta`
-   - `spreadsheetColumns: ColumnDef[]` — the column layout used by the
+   - `spreadsheetColumns: ColumnDef[]` - the column layout used by the
      Preview step's spreadsheet view and `.xlsx` export
-   - `validateRow(row): Record<string, string>` — per-row validation;
+   - `validateRow(row): Record<string, string>` - per-row validation;
      return `{ fieldKey: errorMessage }` for each invalid cell (an empty
      object means the row is valid)
-   - `serialize(groups, meta): string` — turn the edited data into the final
+   - `serialize(groups, meta): string` - turn the edited data into the final
      output text, whatever the target platform expects (XML, JSON, CSV, ...)
-   - `parse?(text)` — optional inverse of `serialize`, returning
+   - `parse?(text)` - optional inverse of `serialize`, returning
      `{ groups, meta }`. Declare it to let users drop an existing export
      straight onto the Edit step, skipping Import/Map entirely; omit it and
      the XML-drop panel reports that the format doesn't support importing
@@ -100,7 +100,7 @@ are all driven generically by the `VariantBundle` interface
 3. **Mind the import-path wrinkle**: `fileColsOf`, `prepareRows` (header-row
    detection and row extraction), and the ANPL-specific hex-address /
    coefficient transforms currently live under `core/variants/argos/` and
-   are imported directly by `App.tsx` — they are *not yet* behind the
+   are imported directly by `App.tsx` - they are *not yet* behind the
    `VariantBundle` interface, simply because Argos has been the only
    registered variant so far. If your format's spreadsheet conventions are
    close enough to ANPL's, you can reuse these as-is; if they diverge (a
@@ -111,7 +111,7 @@ are all driven generically by the `VariantBundle` interface
 
 For a worked example of locking a new serializer to a reference
 implementation, see the parity suite in
-[`core/variants/argos/__tests__/`](src/core/variants/argos/__tests__/) — it
+[`core/variants/argos/__tests__/`](src/core/variants/argos/__tests__/) - it
 asserts the TS port matches the Python oracle byte-for-byte (more on this
 below, under [Parity tests](#parity-tests)).
 

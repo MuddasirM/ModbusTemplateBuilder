@@ -1,6 +1,6 @@
 // The Argos variant bundle: wires the existing (parity-locked) Argos schema,
 // builder, parser, and validation behind the generic VariantBundle interface.
-// Nothing here changes behavior — it's the existing modules, referenced.
+// Nothing here changes behavior - it's the existing modules, referenced.
 
 import { ARGOS_FIELDS, COL_ALIASES } from './fields';
 import { buildXml } from './buildXml';
@@ -17,6 +17,7 @@ const ARGOS_METADATA: MetadataFieldDef[] = [
 // correctly without triggering hex-address or coefficient transforms.
 const ARGOS_EXCEL_COLS: ColumnDef[] = [
   { key: 'point_name',     header: 'Name' },
+  { key: 'point_type',     header: 'Point Type' },
   { key: 'register_index', header: 'Address' },
   { key: 'register_type',  header: 'Register Type' },
   { key: 'data_format',    header: 'Data Format' },

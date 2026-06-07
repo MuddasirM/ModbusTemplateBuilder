@@ -1,12 +1,13 @@
 // Row validation, porting validate_row from the original implementation.
-// Error messages are byte-identical (note en-dash "–" and em-dash "—").
+// Error messages are byte-identical (note en-dash "–" and em-dash "-").
 
-import { ARGOS_FIELDS, VALID_DTYPES, VALID_REG_TYPES } from './fields';
+import { ARGOS_FIELDS, VALID_DTYPES, VALID_POINT_TYPES, VALID_REG_TYPES } from './fields';
 import type { Row } from '../../row';
 import { pyFloat, pyInt } from './format';
 
 const DTYPES_MSG = [...VALID_DTYPES].sort().join(', ');
 const REG_TYPES_MSG = [...VALID_REG_TYPES].sort().join(', ');
+const POINT_TYPES_MSG = [...VALID_POINT_TYPES].sort().join(', ');
 
 export function validateRow(
   rowDict: Row,
@@ -27,9 +28,11 @@ export function validateRow(
       if (!r.ok) errors[f.key] = 'Must be an integer.';
       else if (r.value < 0) errors[f.key] = 'Must be a non-negative integer.';
     } else if (f.key === 'data_format' && !VALID_DTYPES.has(val)) {
-      errors[f.key] = `Invalid — choose: ${DTYPES_MSG}`;
+      errors[f.key] = `Invalid - choose: ${DTYPES_MSG}`;
     } else if (f.key === 'register_type' && !VALID_REG_TYPES.has(val)) {
-      errors[f.key] = `Invalid — choose: ${REG_TYPES_MSG}`;
+      errors[f.key] = `Invalid - choose: ${REG_TYPES_MSG}`;
+    } else if (f.key === 'point_type' && !VALID_POINT_TYPES.has(val)) {
+      errors[f.key] = `Invalid - choose: ${POINT_TYPES_MSG}`;
     } else if (f.key === 'scaling') {
       if (!pyFloat(val).ok) errors[f.key] = 'Must be a number.';
     } else if (f.key === 'decimals') {

@@ -1,7 +1,7 @@
 // Per-variant output bundle: each registered output target (Argos, and future
 // targets like Ignition/WebSupervisor) declares its own row/point shape,
 // hierarchy, template-metadata shape, and serializer. There is no universal
-// canonical structure shared across variants — "canonical" means "the shape
+// canonical structure shared across variants - "canonical" means "the shape
 // this variant needs."
 
 import type { CellValue, Group, Row } from '../row';

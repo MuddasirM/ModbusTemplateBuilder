@@ -41,10 +41,12 @@ export function parseArgosXml(xmlText: string): ParsedXml {
 
       const addr = findChild(child, 'Address');
       const calc = findChild(child, 'Calculate');
+      const typeEl = findChild(child, 'Type');
       const unit = (child.getAttribute('unit') || '').replaceAll('%25', '%');
 
       points.push({
         point_name:     child.getAttribute('name') || '',
+        point_type:     (typeEl?.textContent || '').trim() || 'ShowValue',
         register_index: addr ? addr.getAttribute('index') || '' : '',
         group_name:     groupName,
         register_type:  (addr ? addr.getAttribute('type') || '' : '') || 'Holding',

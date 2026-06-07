@@ -1379,7 +1379,7 @@ pre.xml-preview {
   padding: 4px 6px !important;
 }
 
-/* Flex layout lives on an inner wrapper — `display: flex` directly on the
+/* Flex layout lives on an inner wrapper - `display: flex` directly on the
    <td> blockifies it, breaking it out of the table's column layout. */
 .group-header-inner {
   display: flex;
@@ -1566,7 +1566,7 @@ pre.xml-preview {
     animation: none !important;
   }
 
-  /* Static fill instead of a sweep — still reads as "in progress". */
+  /* Static fill instead of a sweep - still reads as "in progress". */
   .scan-bead {
     left: 0;
     width: 100%;

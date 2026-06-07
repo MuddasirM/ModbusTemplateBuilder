@@ -257,7 +257,7 @@ Sharp-cornered (0px radius). Three variants.
 
 The core component. Dense, sticky-header, resizable columns, drag-to-reorder.
 
-- **Header:** `position: sticky; top: 0`, surface background, ink-muted labels. Each optional column carries a `.col-clear-btn` (×, fades in on header hover, turns `--c-danger` on hover) — **destructive**: clears that field's data across every row (with a confirm dialog), not a visibility toggle.
+- **Header:** `position: sticky; top: 0`, surface background, ink-muted labels. Each optional column carries a `.col-clear-btn` (×, fades in on header hover, turns `--c-danger` on hover) - **destructive**: clears that field's data across every row (with a confirm dialog), not a visibility toggle.
 - **Body rows:** Border-bottom separator. Row hover gets surface background. Cell inputs are ghost at rest.
 - **Row numbers:** Ink-dim color, reflect true position in the unfiltered group (stable under search).
 - **Group sections:** `<tbody>` elements with `group-header-row` (raised surface background). Empty groups show bg color with italic empty badge; a search with zero matches in a non-empty group shows "No rows match your search."
@@ -266,7 +266,7 @@ The core component. Dense, sticky-header, resizable columns, drag-to-reorder.
 
 ### Table toolbar
 
-- **Search input** (`.search-input`): a widened `.field-input[type=search]`, placeholder "Search rows…". Case-insensitive substring match against every field's value — including currently-hidden columns — filtering rows for both display and drag-and-drop scope.
+- **Search input** (`.search-input`): a widened `.field-input[type=search]`, placeholder "Search rows…". Case-insensitive substring match against every field's value - including currently-hidden columns - filtering rows for both display and drag-and-drop scope.
 - **Columns ▾ menu** (`.col-menu`/`.col-menu-panel`/`.col-menu-item`): a small click-to-open popover (closes on outside click) listing every *optional* field as a checkbox; toggling shows/hides that column in the table with **no effect on data or export**. Required fields are excluded and always shown. Panel uses `--c-surface` background, `--c-border` border, sharp corners, and a box-shadow matching `.confirm-dialog`.
 
 ### Step Indicator

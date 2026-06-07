@@ -31,9 +31,9 @@ Import → Map → Edit → Preview / Export
 
 **Step 1: Import**
 Pick an **output format** from the dropdown (today, "Argos" is the only
-registered option — the picker exists so additional formats can be added
+registered option - the picker exists so additional formats can be added
 later without changing this flow). Then drop or browse a `.csv` or `.xlsx`
-register map (or an existing `.xml` template to skip straight to editing —
+register map (or an existing `.xml` template to skip straight to editing -
 only formats that declare a `parse` step support this path).
 Header row detection is automatic: the parser scans the first six rows for
 a row containing both a name column and an address column, so metadata
@@ -60,15 +60,15 @@ in red; hovering shows the specific error. Additional controls:
   and the platform expects 1-indexed, or vice versa)
 - Search rows by any cell value, across every field (including columns
   currently hidden from view)
-- Toggle which optional columns are shown via the "Columns ▾" menu — a
+- Toggle which optional columns are shown via the "Columns ▾" menu - a
   pure declutter control with no effect on the underlying data or the
   exported output
-- Clear a column's data everywhere via the small "×" in its header — a
+- Clear a column's data everywhere via the small "×" in its header - a
   destructive, confirmed action distinct from hiding it (mirrors the
   per-row delete, which is also unconditional)
 - Delete individual rows
 - Fill in the template-level metadata fields the selected format declares
-  (for Argos: Template Name and Version — both end up as attributes on the
+  (for Argos: Template Name and Version - both end up as attributes on the
   exported `<ControllerTemplate>` element)
 
 **Step 4: Preview / Export**
@@ -182,14 +182,14 @@ desktop tool produces for the same input.
 Each supported output format is a **self-contained bundle** declared in
 `src/core/variants/`: it specifies its own row/point field schema and types,
 validation rules, template-level metadata shape (label + input type per
-field — string, number, or date), spreadsheet column layout, and a
+field - string, number, or date), spreadsheet column layout, and a
 serializer that turns the edited data into the final file. The Import-step
 dropdown selects one of these bundles before any data is loaded, so every
 later step (column mapping, validation, the Edit screen's metadata inputs,
 the generated output) is driven generically by the chosen bundle rather than
 hardcoded to one format.
 
-Argos is the first and currently only registered bundle — its XML schema,
+Argos is the first and currently only registered bundle - its XML schema,
 field list, validation, and serialization are exactly what this tool already
 produced, just wrapped behind the bundle interface (zero behavior change,
 verified byte-for-byte against the parity suite). Adding support for another

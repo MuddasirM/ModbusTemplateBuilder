@@ -75,7 +75,7 @@ export function HelpModal({ onClose }: Props) {
             <h3 className="help-step-label"><span className="help-step-num">01</span> Import</h3>
             <p>
               Choose the <em>Output format</em> for the template you're building
-              (currently <em>Argos</em>; more formats can be added over time — each
+              (currently <em>Argos</em>; more formats can be added over time - each
               defines its own fields, validation, and template metadata).
             </p>
             <p>

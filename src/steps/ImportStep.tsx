@@ -39,7 +39,7 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
     let turn = 0;
     const id = setInterval(() => {
       // Step exactly one slot to its next alias, cascading left to right
-      // (then wrapping) — a single quiet change at a time, not all six
+      // (then wrapping) - a single quiet change at a time, not all six
       // turning over in one pulse.
       const slot = turn % CYCLING_HINTS.length;
       turn += 1;

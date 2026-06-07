@@ -16,7 +16,7 @@ Cloudflare's free Pages tier covers unlimited static sites and requests.
    - **Build command:** `npm ci && npm run build`
    - **Build output directory:** `dist`
    - **Root directory:** `web` (if this app lives in a subdirectory of the
-     connected repo — leave blank if the repo root *is* this folder)
+     connected repo - leave blank if the repo root *is* this folder)
    - **Environment variable:** `NODE_VERSION` = `22` (Vite 7 needs ≥ 20.19)
 4. SPA routing: Pages serves `index.html` for unknown routes by default for
    Vite/SPA presets. If you hit 404s on a deep link, add a `public/_redirects`
@@ -25,7 +25,7 @@ Cloudflare's free Pages tier covers unlimited static sites and requests.
    generated for PRs/other branches.
 
 **Cost:** Free. The Pages free tier has no request or bandwidth limits for
-static assets — only a 500-builds-per-month cap, which a small project won't
+static assets - only a 500-builds-per-month cap, which a small project won't
 approach.
 
 ### Or: deploy from the CLI

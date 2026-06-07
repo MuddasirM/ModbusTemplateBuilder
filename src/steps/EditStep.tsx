@@ -404,7 +404,7 @@ export function EditStep({
 
   // ── Column resize ─────────────────────────────────────────────────────────
   const DEFAULT_WIDTHS: Record<string, number> = {
-    point_name: 180, register_index: 90, group_name: 120, register_type: 100,
+    point_name: 180, point_type: 100, register_index: 90, group_name: 120, register_type: 100,
     data_format: 90, unit: 70, scaling: 76, decimals: 72, min_val: 76, max_val: 76,
   };
   const [colWidths, setColWidths] = useState<Record<string, number>>(DEFAULT_WIDTHS);
@@ -760,8 +760,6 @@ export function EditStep({
 
         {/* Row 3 — table controls: counter, search, column visibility, address shift */}
         <div className="toolbar-row toolbar-row-table">
-          
-
           <input
             type="search"
             className="field-input search-input"
@@ -981,8 +979,8 @@ export function EditStep({
         </DndContext>
 
       </div>
-      <span className="toolbar-meta">{totalPoints} registers</span>
       <div className="step-footer">
+        <span className="toolbar-meta">{totalPoints} registers</span>
         <span
           style={{
             marginLeft: 'auto',

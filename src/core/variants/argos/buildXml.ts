@@ -66,8 +66,10 @@ export function buildXml(
       if (mn) calcAttrs.push(['min', mn]);
       if (mx) calcAttrs.push(['max', mx]);
 
+      const ptype = g(r, 'point_type').trim() || 'ShowValue';
+
       lines.push(`${I}${I}<Point${attrs(pointAttrs)}>`);
-      lines.push(`${I}${I}${I}<Type>ShowValue</Type>`);
+      lines.push(`${I}${I}${I}<Type>${ptype}</Type>`);
       lines.push(`${I}${I}${I}<Address${attrs(addrAttrs)}/>`);
       lines.push(`${I}${I}${I}<Calculate${attrs(calcAttrs)}/>`);
       lines.push(`${I}${I}${I}<Enum/>`);

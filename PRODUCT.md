@@ -15,7 +15,7 @@ Both are technically literate. Neither needs hand-holding on Modbus concepts.
 
 ## Product Purpose
 
-A browser-based 4-step wizard (Import → Map → Edit → Preview) that converts register maps from spreadsheets (or an existing template file) into correctly formatted device-platform templates. Output format is selected up front via a dropdown — each format is a self-contained "variant bundle" declaring its own field schema, validation, and serializer. Argos XML is the first registered variant and is a web port of a Python desktop tool; its behavior is locked to the Python implementation by parity tests.
+A browser-based 4-step wizard (Import → Map → Edit → Preview) that converts register maps from spreadsheets (or an existing template file) into correctly formatted device-platform templates. Output format is selected up front via a dropdown - each format is a self-contained "variant bundle" declaring its own field schema, validation, and serializer. Argos XML is the first registered variant and is a web port of a Python desktop tool; its behavior is locked to the Python implementation by parity tests.
 
 Success: a technician can go from a vendor CSV to an exportable, correct XML template in under two minutes, with no ambiguity about what the output will contain.
 
