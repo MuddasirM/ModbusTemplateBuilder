@@ -1,11 +1,11 @@
 # Modbus Template Builder: Technical Overview
 
 A browser-based tool that converts Modbus register map spreadsheets into
-device-platform template files. **Argos `ControllerTemplate` XML is the
-first supported output format**, built on an extensible per-variant
-architecture so additional formats (Ignition, WebSupervisor, etc.) can be
-added without touching the conversion pipeline. No backend, no install, no
-data leaves the browser.
+device-platform template files. **Argos `ControllerTemplate` XML** was the
+first supported output format; **Kepware tag-import CSV** is the second.
+Both are built on an extensible per-variant architecture so additional
+formats (Ignition, WebSupervisor, etc.) can be added without touching the
+conversion pipeline. No backend, no install, no data leaves the browser.
 
 ---
 
@@ -30,11 +30,17 @@ Import → Map → Edit → Preview / Export
 ```
 
 **Step 1: Import**
-Pick an **output format** from the dropdown (today, "Argos" is the only
-registered option - the picker exists so additional formats can be added
-later without changing this flow). Then drop or browse a `.csv` or `.xlsx`
-register map (or an existing `.xml` template to skip straight to editing -
-only formats that declare a `parse` step support this path).
+Pick an **output format** from the dropdown ("Argos" or "Kepware" today -
+the picker exists so additional formats can be added later without changing
+this flow). Beside the dropdown, **Sample input** and **Sample output**
+download a small representative spreadsheet and a snippet of the selected
+format's generated output, respectively, so you can see what you're getting
+into on both ends before importing anything (sample output is only offered
+for formats that declare one via `sample`). Then drop or
+browse a `.csv` or `.xlsx` register map (or an existing `.xml` template to
+skip straight to editing - only formats that declare a `parse` step support
+this path; Kepware doesn't, since a flat CSV can't round-trip the same
+template metadata an XML file carries).
 Header row detection is automatic: the parser scans the first six rows for
 a row containing both a name column and an address column, so metadata
 rows above the header are handled without manual intervention.
@@ -67,15 +73,31 @@ in red; hovering shows the specific error. Additional controls:
   destructive, confirmed action distinct from hiding it (mirrors the
   per-row delete, which is also unconditional)
 - Delete individual rows
+- **Select multiple** (toolbar button beside the address shift controls):
+  switches into multi-select mode, where a banner explains that you select
+  rows by clicking and dragging across their checkboxes specifically (not
+  anywhere in the row, to avoid colliding with the existing row drag-reorder
+  gesture). With one or more rows checked, **Edit** opens a bulk-edit dialog
+  that overwrites a chosen field (from the format's `bulkEditSchema`, e.g.
+  Register Type, Data Format, Scaling, Unit, Group) across every selected
+  row at once, and **Delete** removes them all after a single confirmation.
+  **OK** exits multi-select mode. (Point Name and Address never appear in
+  the bulk-edit field list - they're unique per row, so a bulk overwrite
+  would create duplicates.)
 - Fill in the template-level metadata fields the selected format declares
-  (for Argos: Template Name and Version - both end up as attributes on the
-  exported `<ControllerTemplate>` element)
+  (for Argos: Template Name and Version, which end up as attributes on the
+  exported `<ControllerTemplate>`; Kepware just takes a Template Name, used
+  for the exported filename since its flat CSV has no template-level shape
+  to carry one)
 
 **Step 4: Preview / Export**
-Syntax-highlighted output with a point and group count summary. One-click
-copy to clipboard or download as a named file (for Argos, `.xml`); a
-Spreadsheet view and `.xlsx` export are also available, using the columns
-the selected format declares.
+Output rendered through a format-aware preview (XML gets syntax
+highlighting; Kepware's CSV renders as plain text) with a point and group
+count summary. One-click copy to clipboard or download as a named file
+(`.xml` for Argos, `.csv` for Kepware - the extension, MIME type, and label
+all come from the variant's declared `output` shape); a Spreadsheet view and
+`.xlsx` export are also available, using the columns the selected format
+declares.
 
 A small **`✉`** button sits in the header, beside the theme toggle and the
 help icon, on every step. It opens a dialog describing three kinds of message worth
@@ -138,18 +160,25 @@ so generic spreadsheets with a plain `Scaling` column are not affected.
 
 ## Validation
 
-Before generating XML, every row is validated:
+Before generating output, every row is validated against the rules the
+selected format declares (`variant.validateRow`). For Argos:
 
 - Point Name and Register Address: required, non-empty
 - Register Address: non-negative integer
-- Data Format: must be one of `U16 S16 U32 S32 U64 Float`
+- Data Format: must be one of `U16 S16 U32 S32 U64 Float Bool`
 - Register Type: must be one of `Holding Input Coil Discrete`
+- Point Type: must be one of `ShowValue ShowEnum SetValue SetValueWO SetEnum`
 - Scaling: must be a valid number
 - Decimals: integer in range 0–9
 - Min / Max: must be valid numbers if present
 
+Kepware shares the Point Name / Register Address / Data Format / Register
+Type / Point Type / Scaling rules above (it has no Decimals, Min, or Max
+fields to validate), plus one rule of its own: **Scaling cannot be zero**,
+since the CSV's Scaled High column is `32767 / scaling`.
+
 Validation errors are shown per-cell with a tooltip explaining the specific
-problem. Export is blocked until all errors are resolved.
+problem. The transition to Preview is blocked until all errors are resolved.
 
 ---
 
@@ -177,6 +206,48 @@ desktop tool produces for the same input.
 
 ---
 
+## Kepware CSV output format
+
+Kepware tag-import CSVs are flat: one header row, then one row per point, in
+group order then row order. The Group field organises the Edit screen but is
+never written out, and empty groups are silently skipped (consistent with
+Argos's omitted-group handling).
+
+```csv
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Engineering Units,Description
+Voltage L1,400101,Word,1,RO,100,Linear,0,32767,0,3276.7,Float,1,1,V,
+Current L1,400111,Short,1,RO,100,,,,,,,,,,
+Power,400131,DWord,1,RO,100,,,,,,,,,,
+```
+
+A few columns are derived rather than copied straight from the edited row:
+
+- **Address** - the register address is converted to Kepware's 6-digit
+  Modbus form: `offset_base + address`, zero-padded to 6 digits, where the
+  offset base is `Holding 400001`, `Input 300001`, `Coil 000001`, or
+  `Discrete 100001` (e.g. address `100` on a Holding register → `400101`).
+- **Data Type** - the edited Data Format maps to a Kepware type name:
+  `U16→Word, S16→Short, U32→DWord, S32→Long, Float→Float, U64→QWord, Bool→Boolean`.
+- **Client Access** - the edited Point Type maps to a Kepware access mode:
+  `ShowValue/ShowEnum→RO, SetValue/SetEnum→RW, SetValueWO→WO`.
+- **Respect Data Type** and **Scan Rate** are constant (`1` and `100`).
+- **Scaling and the Raw/Scaled/Clamp columns** are populated only when the
+  edited Scaling is not `1`: `Scaling=Linear`, `Raw Low/High=0/32767`,
+  `Scaled Low=0`, `Scaled High=32767 / scaling`, `Scaled Data Type=Float`,
+  `Clamp Low/High=1`. Unscaled points leave all of these blank.
+- **Engineering Units** carries the edited Unit (blank if empty);
+  **Description** is always blank (the format has no source for it).
+
+Unlike Argos, Kepware is a new format with no Python reference to match -
+its own test suite (see "Parity tests" in [README.md](README.md)) locks
+the *serializer to itself*, asserting it's byte-for-byte stable across runs
+rather than matching an external oracle. It also has no template-level XML
+root, so its `metadata` is just a Template Name used for the exported
+filename, and it declares no `parse` (a flat CSV can't carry the same
+template shape back in).
+
+---
+
 ## Output format ("variant") architecture
 
 Each supported output format is a **self-contained bundle** declared in
@@ -189,12 +260,16 @@ later step (column mapping, validation, the Edit screen's metadata inputs,
 the generated output) is driven generically by the chosen bundle rather than
 hardcoded to one format.
 
-Argos is the first and currently only registered bundle - its XML schema,
-field list, validation, and serialization are exactly what this tool already
+Argos and Kepware are the two registered bundles. Argos's XML schema, field
+list, validation, and serialization are exactly what this tool already
 produced, just wrapped behind the bundle interface (zero behavior change,
-verified byte-for-byte against the parity suite). Adding support for another
-platform means writing one new bundle file and registering it; the wizard,
-mapping UI, validation gate, and preview/export screens require no changes.
+verified byte-for-byte against the parity suite). Kepware was added after it,
+following the same structure - reusing Argos's canonical field keys (so the
+shared import pipeline populates it correctly), declaring its own CSV
+serializer, validation, bulk-edit schema, and output shape, and shipping its
+own self-locking test suite. Adding support for another platform means
+writing one new bundle file and registering it; the wizard, mapping UI,
+validation gate, and preview/export screens require no changes.
 
 ---
 

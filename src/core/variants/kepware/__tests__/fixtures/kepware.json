@@ -1,0 +1,23 @@
+{
+  "groups": [
+    {
+      "name": "Meters",
+      "points": [
+        { "point_name": "Voltage L1", "point_type": "ShowValue", "register_index": "100", "group_name": "Meters", "register_type": "Holding", "data_format": "U16", "unit": "V", "scaling": "10", "decimals": "2", "min_val": "", "max_val": "" },
+        { "point_name": "Status Word", "point_type": "ShowValue", "register_index": "25", "group_name": "Meters", "register_type": "Input", "data_format": "U16", "unit": "", "scaling": "1", "decimals": "2", "min_val": "", "max_val": "" }
+      ]
+    },
+    {
+      "name": "Controls",
+      "points": [
+        { "point_name": "Pump Run Cmd", "point_type": "SetValue", "register_index": "5", "group_name": "Controls", "register_type": "Coil", "data_format": "Bool", "unit": "", "scaling": "1", "decimals": "2", "min_val": "", "max_val": "" },
+        { "point_name": "Alarm Bit", "point_type": "ShowValue", "register_index": "12", "group_name": "Controls", "register_type": "Discrete", "data_format": "Bool", "unit": "", "scaling": "1", "decimals": "2", "min_val": "", "max_val": "" }
+      ]
+    },
+    {
+      "name": "Spare",
+      "points": []
+    }
+  ],
+  "csv": "Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Engineering Units,Description\nVoltage L1,400101,Word,1,RO,100,Linear,0,32767,0,3276.7,Float,1,1,V,\nStatus Word,300026,Word,1,RO,100,,,,,,,,,,\nPump Run Cmd,000006,Boolean,1,RW,100,,,,,,,,,,\nAlarm Bit,100013,Boolean,1,RO,100,,,,,,,,,,\n"
+}

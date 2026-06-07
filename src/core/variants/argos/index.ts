@@ -6,7 +6,27 @@ import { ARGOS_FIELDS, COL_ALIASES, FIELD_BY_KEY } from './fields';
 import { buildXml } from './buildXml';
 import { parseArgosXml } from './parseXml';
 import { validateRow } from './validate';
-import type { BulkEditField, ColumnDef, MetadataFieldDef, VariantBundle } from '../types';
+import type { BulkEditField, ColumnDef, MetadataFieldDef, OutputFormat, VariantBundle } from '../types';
+
+const ARGOS_OUTPUT: OutputFormat = {
+  label: 'XML',
+  extension: 'xml',
+  mimeType: 'application/xml',
+  syntax: 'xml',
+};
+
+const ARGOS_SAMPLE = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ControllerTemplate encoding="UTF-8" name="My Template" uid="0" version="1.0">
+   <Group id="0" name="Default Group" uid="0">
+      <Point id="0" name="Voltage L1" unit="V">
+         <Type>ShowValue</Type>
+         <Address format="U16" type="Holding" index="100"/>
+         <Calculate decimals="2" scaling="10"/>
+         <Enum/>
+      </Point>
+   </Group>
+</ControllerTemplate>
+`;
 
 const ARGOS_METADATA: MetadataFieldDef[] = [
   { key: 'name', label: 'Template Name', inputType: 'string', default: 'Modbus Template' },
@@ -60,6 +80,8 @@ export const argosVariant: VariantBundle = {
   metadata: ARGOS_METADATA,
   spreadsheetColumns: ARGOS_EXCEL_COLS,
   bulkEditSchema: ARGOS_BULK_EDIT_SCHEMA,
+  output: ARGOS_OUTPUT,
+  sample: ARGOS_SAMPLE,
   validateRow,
   serialize: (groups, meta) =>
     buildXml(groups, String(meta.name ?? ''), String(meta.version ?? '')),

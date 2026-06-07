@@ -232,6 +232,7 @@ export function App() {
               setVisibleFields={setVisibleFields}
               metadataFields={variant.metadata}
               bulkEditSchema={variant.bulkEditSchema ?? []}
+              outputLabel={variant.output.label}
               meta={meta}
               setMeta={setMeta}
               pointErrors={pointErrors}
@@ -247,6 +248,7 @@ export function App() {
               spreadsheetColumns={variant.spreadsheetColumns}
               visibleFields={visibleFields}
               omittedGroups={omittedGroups}
+              output={variant.output}
               onBack={() => setStep('edit')}
               onNew={newImport}
             />

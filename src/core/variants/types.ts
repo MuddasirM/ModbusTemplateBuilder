@@ -32,6 +32,17 @@ export interface ColumnDef {
   header: string;
 }
 
+/** Describes the shape of a variant's generated output, so the Preview step
+ * can render, label, and export it without assuming XML. `syntax` picks the
+ * preview's highlighting: 'xml' for tagged markup, 'plain' for everything else
+ * (CSV, delimited text, ...). */
+export interface OutputFormat {
+  label: string;
+  extension: string;
+  mimeType: string;
+  syntax: 'xml' | 'plain';
+}
+
 /** A field offered in the Edit step's bulk-edit modal: which key it writes,
  * how it's labelled, and what kind of input it gets. Point Name and Register
  * Address must never appear here (unique per row, bulk overwrite makes no
@@ -67,6 +78,14 @@ export interface VariantBundle {
   /** Fields offered in the Edit step's bulk-edit modal, in display order.
    * Optional: a variant with nothing meaningful to bulk-edit can omit it. */
   bulkEditSchema?: BulkEditField[];
+
+  /** Shape of this variant's serialized output, so Preview/Export can render
+   * and label it without assuming XML. */
+  output: OutputFormat;
+  /** A short, representative snippet of this variant's output, shown on the
+   * Import step when the variant is selected so the user knows what they'll
+   * get before they commit to it. Optional: variants can omit it. */
+  sample?: string;
 
   validateRow(row: Row): Record<string, string>;
   serialize(groups: Group[], meta: Record<string, CellValue>): string;

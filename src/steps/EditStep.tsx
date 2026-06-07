@@ -39,6 +39,7 @@ interface Props {
   meta: Record<string, CellValue>;
   setMeta: Dispatch<SetStateAction<Record<string, CellValue>>>;
   bulkEditSchema: BulkEditField[];
+  outputLabel: string;
   pointErrors: PointErrors | null;
   onBack: () => void;
   onGenerate: () => void;
@@ -572,6 +573,7 @@ export function EditStep({
   meta,
   setMeta,
   bulkEditSchema,
+  outputLabel,
   pointErrors,
   onBack,
   onGenerate,
@@ -1451,7 +1453,7 @@ export function EditStep({
             style={generateDisabledReason ? { pointerEvents: 'none' } : undefined}
             onClick={onGenerate}
           >
-            Preview XML →
+            Preview {outputLabel} →
           </button>
         </span>
       </div>

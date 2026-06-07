@@ -1,11 +1,13 @@
-// XML syntax highlighting for the preview pane, porting _xml_highlight's intent
-// (tags / attributes / values / processing instruction) to HTML spans.
+// Generic code/text preview pane for the Preview step. XML output gets the
+// tag/attribute/value/processing-instruction syntax highlighting (porting
+// _xml_highlight's intent to HTML spans); other formats (CSV, ...) render as
+// plain, escaped text in the same monospace shell.
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function highlightLine(line: string): string {
+function highlightXmlLine(line: string): string {
   if (line.trimStart().startsWith('<?')) {
     return `<span class="xproc">${escapeHtml(line)}</span>`;
   }
@@ -29,7 +31,16 @@ function highlightLine(line: string): string {
   return out;
 }
 
-export function XmlPreview({ xml }: { xml: string }) {
-  const html = xml.split('\n').map(highlightLine).join('\n');
-  return <pre className="xml-preview" dangerouslySetInnerHTML={{ __html: html }} />;
+interface Props {
+  code: string;
+  /** Omit for plain, escaped text; 'xml' applies tag/attribute/value highlighting. */
+  highlight?: 'xml';
+}
+
+export function CodePreview({ code, highlight }: Props) {
+  if (highlight === 'xml') {
+    const html = code.split('\n').map(highlightXmlLine).join('\n');
+    return <pre className="code-preview" dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  return <pre className="code-preview">{code}</pre>;
 }

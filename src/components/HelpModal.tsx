@@ -75,8 +75,12 @@ export function HelpModal({ onClose }: Props) {
             <h3 className="help-step-label"><span className="help-step-num">01</span> Import</h3>
             <p>
               Choose the <em>Output format</em> for the template you're building
-              (currently <em>Argos</em>; more formats can be added over time - each
-              defines its own fields, validation, and template metadata).
+              (currently <em>Argos</em> XML or <em>Kepware</em> CSV; more formats
+              can be added over time - each defines its own fields, validation,
+              and template metadata). Beside the picker, <em>Sample input</em> and
+              <em>Sample output</em> download a small example register-map
+              spreadsheet and a snippet of that format's generated output, so
+              you know what you're working with on both ends before you import.
             </p>
             <p>
               Then drop or browse a <code>.csv</code> or <code>.xlsx</code> register map to start a new template.
@@ -113,6 +117,15 @@ export function HelpModal({ onClose }: Props) {
               <li>Drag the <code>⠿</code> handle to reorder rows within a group, or drag into a different group to move them.</li>
               <li>Drag the <code>⠿</code> on a group header to reorder groups.</li>
               <li><code>⧉</code> on the right side of a row duplicates it. <code>×</code> deletes it.</li>
+              <li>
+                <em>Select multiple</em> (beside the −1 / +1 controls) switches into
+                multi-select mode: click and drag across the row checkboxes to select
+                several rows at once (dragging elsewhere in the table won't select them,
+                so it doesn't conflict with reordering). With rows selected, <em>Edit</em>
+                opens a dialog that overwrites one field across all of them in one go,
+                and <em>Delete</em> removes them all after a single confirmation.
+                <em>OK</em> exits multi-select mode.
+              </li>
               <li>Drag a column header's right edge to resize that column.</li>
               <li><code>×</code> on an optional column header hides that column.</li>
               <li><code>−1</code> / <code>+1</code> shifts every register address by one.</li>
@@ -125,11 +138,17 @@ export function HelpModal({ onClose }: Props) {
           <section className="help-section">
             <h3 className="help-step-label"><span className="help-step-num">04</span> Preview</h3>
             <p>
-              Switch between <em>XML</em> and <em>Spreadsheet</em> views using the toggle at the top right.
+              Switch between the generated output and a <em>Spreadsheet</em> view
+              using the toggle at the top right. The output view is labelled with
+              the selected format (e.g. <em>XML</em> for Argos, <em>CSV</em> for Kepware).
             </p>
             <ul className="help-list">
-              <li><em>XML view:</em> syntax-highlighted template. Copy to clipboard or download as <code>.xml</code>.</li>
-              <li><em>Spreadsheet view:</em> flat table of all registers. Download as <code>.xlsx</code>.</li>
+              <li>
+                <em>Output view:</em> the generated template or file, syntax-highlighted
+                for XML and shown as plain text for other formats. Copy to clipboard or
+                download it under its native extension (<code>.xml</code>, <code>.csv</code>, ...).
+              </li>
+              <li><em>Spreadsheet view:</em> flat table of all registers, using that format's column layout. Download as <code>.xlsx</code>.</li>
               <li>Empty groups are excluded from the output; a notice lists any that were omitted.</li>
               <li><code>+ New</code> clears everything and returns to Import.</li>
             </ul>
@@ -137,6 +156,11 @@ export function HelpModal({ onClose }: Props) {
 
           <section className="help-section">
             <h3 className="help-section-title">Recognised column names</h3>
+            <p>
+              These are the canonical (ANPL) names and aliases Argos's column
+              mapper recognises. Kepware recognises a near-identical set, minus
+              the columns it has no fields for (Decimals, Min, Max).
+            </p>
             <div className="help-cols">
               {FIELD_INFO.map(f => (
                 <button

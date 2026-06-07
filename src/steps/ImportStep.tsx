@@ -3,6 +3,18 @@ import { useEffect, useRef, useState } from 'react';
 import type { Source } from '../App';
 import type { VariantBundle } from '../core/variants/types';
 
+const SAMPLE_INPUT_PATH = '/sample_anpl_register_map.csv';
+const SAMPLE_INPUT_FILENAME = 'sample_register_map.csv';
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const STATUS_LABEL: Record<Source, string> = {
   csv: 'Parsing rows and detecting columns…',
   xml: 'Parsing template structure…',
@@ -53,6 +65,17 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
   const pickCsv = (f?: File | null) => f && onCsv(f);
   const pickXml = (f?: File | null) => f && onXml(f);
 
+  async function downloadSampleInput() {
+    const res = await fetch(SAMPLE_INPUT_PATH);
+    downloadBlob(await res.blob(), SAMPLE_INPUT_FILENAME);
+  }
+
+  function downloadSampleOutput() {
+    if (!variant.sample) return;
+    const blob = new Blob([variant.sample], { type: variant.output.mimeType });
+    downloadBlob(blob, `${variant.id}_sample.${variant.output.extension}`);
+  }
+
   function onCsvDrop(e: React.DragEvent) {
     e.preventDefault();
     setCsvDragging(false);
@@ -100,6 +123,23 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
             <option key={v.id} value={v.id}>{v.label}</option>
           ))}
         </select>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={downloadSampleInput}
+          title={`Download a sample register-map spreadsheet (the format ${variant.label} imports)`}
+        >
+          Sample input ↓
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={downloadSampleOutput}
+          disabled={!variant.sample}
+          title={`Download a sample of the ${variant.output.label} ${variant.label} produces`}
+        >
+          Sample output ↓
+        </button>
       </div>
 
       <div className="import-panels">
@@ -129,27 +169,35 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
         <div className="import-or">or</div>
 
         {/* XML panel */}
-        <div
-          className={`drop-zone${xmlDragging ? ' dragging' : ''}`}
-          onClick={() => xmlInput.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setXmlDragging(true); }}
-          onDragLeave={() => setXmlDragging(false)}
-          onDrop={onXmlDrop}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && xmlInput.current?.click()}
-        >
-          <div className="drop-zone-icon drop-zone-icon--xml">&lt;/&gt;</div>
-          <p className="drop-zone-title">Edit a template XML</p>
-          <p className="drop-zone-sub">.xml</p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={(e) => { e.stopPropagation(); xmlInput.current?.click(); }}
+        {variant.parse ? (
+          <div
+            className={`drop-zone${xmlDragging ? ' dragging' : ''}`}
+            onClick={() => xmlInput.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setXmlDragging(true); }}
+            onDragLeave={() => setXmlDragging(false)}
+            onDrop={onXmlDrop}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && xmlInput.current?.click()}
           >
-            Browse XML...
-          </button>
-        </div>
+            <div className="drop-zone-icon drop-zone-icon--xml">&lt;/&gt;</div>
+            <p className="drop-zone-title">Edit a template XML</p>
+            <p className="drop-zone-sub">.xml</p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={(e) => { e.stopPropagation(); xmlInput.current?.click(); }}
+            >
+              Browse XML...
+            </button>
+          </div>
+        ) : (
+          <div className="drop-zone drop-zone--disabled">
+            <div className="drop-zone-icon drop-zone-icon--xml">&lt;/&gt;</div>
+            <p className="drop-zone-title">Editing a template isn't supported</p>
+            <p className="drop-zone-sub">{variant.label} has no template file to read back in</p>
+          </div>
+        )}
       </div>
 
       <p className="import-hint">

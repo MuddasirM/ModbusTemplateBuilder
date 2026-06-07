@@ -17,13 +17,24 @@ that aren't written down anywhere else.
 - **`src/App.tsx`**: the state owner. Holds `grid`, `mapping`, `defaults`,
   `groups`, `variant`, `meta`, `pointErrors`, `xml`, the `uid()` id counter,
   and the step-transition/validation gate.
-- **`src/core/variants/`**: the variant-bundle system. `types.ts` declares the
-  `VariantBundle` interface (`id`, `label`, `fields`, `metadata`,
-  `spreadsheetColumns`, `hierarchy`, `aliases`, `validateRow`, `serialize`,
-  optional `parse`); `registry.ts` exports `VARIANTS` / `DEFAULT_VARIANT`.
-  `argos/` is the first (and only) registered bundle:
-  `buildXml`, `fields`, `format`, `mapping`, `parseXml`, `prepareRows`,
-  `transforms`, `validate`, plus `__tests__/` (parity + groups suites).
+- **`src/core/variants/`**: the variant-bundle system. `types.ts` declares
+  the `VariantBundle` interface (`id`, `label`, `fields`, `metadata`,
+  `spreadsheetColumns`, `hierarchy`, `aliases`, `bulkEditSchema?`, `output`,
+  `sample?`, `validateRow`, `serialize`, optional `parse`); `output:
+  OutputFormat` (`label`, `extension`, `mimeType`, `syntax: 'xml' | 'plain'`)
+  is what lets the Preview step render/label/export non-XML formats without
+  hardcoding XML. `registry.ts` exports `VARIANTS` / `DEFAULT_VARIANT`.
+  Two bundles are registered:
+  - `argos/`: `buildXml`, `fields`, `format`, `mapping`, `parseXml`,
+    `prepareRows`, `transforms`, `validate`, plus `__tests__/` (parity +
+    groups suites). The original ANPL/XML port; output is XML, locked
+    byte-for-byte to the Python reference.
+  - `kepware/`: `buildCsv`, `fields`, `format`, `validate`, plus
+    `__tests__/` (its own parity suite). A flat tag-import CSV target with
+    no Python oracle (a new format, not a port) - its suite instead locks
+    the serializer to itself (deterministic, byte-for-byte stable across
+    runs on a fixed input). It declares no `parse` (a flat CSV can't carry
+    template metadata back in).
 - **`src/core/row.ts`**: the generic shapes every variant's data passes
   through, regardless of output target: `CellValue`, `Row`
   (`Record<fieldKey, string>`), `Group` (`{name, points}`), `isNa`.
@@ -31,10 +42,11 @@ that aren't written down anywhere else.
   `.xlsx`), producing a raw `CellValue[][]` grid mirroring
   `pandas.read_*(header=None, dtype=str)`.
 - **`src/steps/`**: the four wizard views: `ImportStep`, `MappingStep`,
-  `EditStep` (the big one, drag-and-drop editing via `@dnd-kit`),
-  `PreviewStep`.
+  `EditStep` (the big one, drag-and-drop editing via `@dnd-kit`, plus a
+  multi-select mode for bulk edit/delete), `PreviewStep`.
 - **`src/components/`**: `HelpModal`, `FeedbackModal`, `StepHeader`,
-  `XmlPreview`, `CpuIcon`.
+  `CodePreview` (generic XML/plain-text preview pane; renamed from
+  `XmlPreview` when Kepware's CSV output needed a non-XML preview), `CpuIcon`.
 - **`src/hooks/useTheme.ts`**: Amber Terminal/Daylight theme toggle.
 - **`src/tokens.css`**: OKLCH design tokens; **`src/index.css`**: everything
   else (component styles, modal shells, type scale).
@@ -78,6 +90,18 @@ unit, scaling, decimals, min_val, max_val`.
 - **Validation gates the Edit to Preview transition.** `generate()` in
   `App.tsx` runs `variant.validateRow` over every point, sets `pointErrors`,
   and blocks the transition while any row is invalid.
+- **`prepareRows` is hardcoded to `ARGOS_FIELDS`, for every variant.**
+  `App.tsx` imports it directly from `argos/` (the "import-path wrinkle" -
+  see README's "Adding a new output variant"), and it iterates
+  `ARGOS_FIELDS` (`prepareRows.ts:63`) regardless of which variant is
+  selected. That means the canonical `Row` the spreadsheet-import path
+  produces is *always* keyed by Argos's field keys (`point_name`,
+  `point_type`, `register_index`, `group_name`, `register_type`,
+  `data_format`, `unit`, `scaling`, `decimals`, `min_val`, `max_val`). Any
+  new variant's `fields` array must reuse a subset of those same keys (not
+  invent its own) for the shared import pipeline to populate it correctly -
+  this is exactly what `kepware/fields.ts` does (it reuses 8 of the 11 keys
+  and omits `decimals`/`min_val`/`max_val`, which its CSV has no columns for).
 - **`EditStep.tsx` cross-group drag moves** happen in `onDragOver`, not
   `onDragEnd`: if you touch the `@dnd-kit` wiring, that's where a point
   changes group mid-drag.

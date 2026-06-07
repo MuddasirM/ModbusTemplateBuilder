@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import { XmlPreview } from '../components/XmlPreview';
+import { CodePreview } from '../components/CodePreview';
 import type { Group, Row } from '../core/row';
-import type { ColumnDef } from '../core/variants/types';
+import type { ColumnDef, OutputFormat } from '../core/variants/types';
 
 interface Props {
   xml: string;
@@ -11,20 +11,17 @@ interface Props {
   spreadsheetColumns: ColumnDef[];
   visibleFields: string[];
   omittedGroups: string[];
+  output: OutputFormat;
   onBack: () => void;
   onNew: () => void;
-}
-
-function countOccurrences(s: string, needle: string): number {
-  return s.split(needle).length - 1;
 }
 
 interface ExportLogEntry {
   text: string;
 }
 
-export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, visibleFields, omittedGroups, onBack, onNew }: Props) {
-  const [view, setView] = useState<'xml' | 'sheet'>('xml');
+export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, visibleFields, omittedGroups, output, onBack, onNew }: Props) {
+  const [view, setView] = useState<'code' | 'sheet'>('code');
   const [copied, setCopied] = useState(false);
 
   // Session-only export log (terminal-style, typed-on-screen): cleared on
@@ -37,8 +34,8 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
     setExportLog((prev) => [...prev, { text: `${label} was exported as ${format}: transformation successful.` }]);
   }
 
-  const points = countOccurrences(xml, '<Point ');
-  const xmlGroups = countOccurrences(xml, '<Group ');
+  const points = groups.reduce((n, g) => n + g.points.length, 0);
+  const groupCount = groups.length;
 
   // Match the Edit step's column visibility (required fields are always in visibleFields).
   const sheetCols = spreadsheetColumns.filter((c) => visibleFields.includes(c.key));
@@ -54,15 +51,15 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
     setTimeout(() => setCopied(false), 1500);
   }
 
-  function exportXml() {
-    const blob = new Blob([xml], { type: 'application/xml' });
+  function exportPrimary() {
+    const blob = new Blob([xml], { type: output.mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${templateLabel.replace(/ /g, '_') || 'template'}.xml`;
+    a.download = `${templateLabel.replace(/ /g, '_') || 'template'}.${output.extension}`;
     a.click();
     URL.revokeObjectURL(url);
-    logExport('XML');
+    logExport(output.label);
   }
 
   async function exportExcel() {
@@ -101,7 +98,7 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
         </button>
         <span className="sep" />
         <span className="badge badge-success">{points} points</span>
-        <span className="badge badge-info">{xmlGroups} groups</span>
+        <span className="badge badge-info">{groupCount} groups</span>
 
         {omittedGroups.length > 0 && (
           <span className="omitted-notice">
@@ -115,10 +112,10 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
         <div className="view-toggle" style={{ marginLeft: 'auto' }}>
           <button
             type="button"
-            className={`btn btn-sm${view === 'xml' ? ' btn-active' : ''}`}
-            onClick={() => setView('xml')}
+            className={`btn btn-sm${view === 'code' ? ' btn-active' : ''}`}
+            onClick={() => setView('code')}
           >
-            XML
+            {output.label}
           </button>
           <button
             type="button"
@@ -131,8 +128,8 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
       </div>
 
       {/* Content area */}
-      {view === 'xml' ? (
-        <XmlPreview xml={xml} />
+      {view === 'code' ? (
+        <CodePreview code={xml} highlight={output.syntax === 'xml' ? 'xml' : undefined} />
       ) : (
         <div className="table-scroll">
           <table className="register-table sheet-preview">
@@ -187,13 +184,13 @@ export function PreviewStep({ xml, groups, templateLabel, spreadsheetColumns, vi
           {exported ? '+ New template →' : '+ New'}
         </button>
         <div className="flex gap-2">
-          {view === 'xml' ? (
+          {view === 'code' ? (
             <>
               <button type="button" className="btn" onClick={copy}>
                 {copied ? 'Copied!' : 'Copy to clipboard'}
               </button>
-              <button type="button" className="btn btn-primary" onClick={exportXml}>
-                Export XML
+              <button type="button" className="btn btn-primary" onClick={exportPrimary}>
+                Export {output.label}
               </button>
             </>
           ) : (

@@ -4,9 +4,10 @@ A browser port of an earlier Tkinter desktop app. Same 4-step wizard
 (Import → Map → Edit → Preview), now fronted by an output-format picker on
 the Import step. Each format is a self-contained "variant bundle"
 (`src/core/variants/`) declaring its own field schema, validation, template
-metadata, and serializer: **Argos is the first registered variant**, ported
-1:1 from the original implementation and locked to a byte-for-byte parity
-suite. The same XML-import path (skip straight to the editor) is preserved
+metadata, output shape, and serializer. Two are registered today: **Argos**
+(`ControllerTemplate` XML), ported 1:1 from the original implementation and
+locked to a byte-for-byte parity suite, and **Kepware** (a flat tag-import
+CSV). The same XML-import path (skip straight to the editor) is preserved
 for any variant that declares a `parse` step.
 
 - **Stack:** React 19 + Vite 7 + TypeScript, IBM Plex Mono, ExcelJS, PapaParse, @dnd-kit.
@@ -39,9 +40,11 @@ The wizard moves data through four steps, all driven by the selected
 4. **Preview / Export** - `stateToCore` strips the ids back down to plain
    `Group[]`/`Row[]`. `variant.serialize(groups, meta)` turns that, plus the
    template-level `meta` (one value per declared `MetadataFieldDef`), into
-   the final text. `PreviewStep` then offers copy/download of that text (XML
-   for Argos) alongside a spreadsheet view and `.xlsx` export driven by
-   `variant.spreadsheetColumns`.
+   the final text. `PreviewStep` renders that text through `CodePreview`
+   (XML syntax highlighting or plain text, per `variant.output.syntax`) and
+   offers copy/download using the label/extension/MIME type the variant
+   declares in `output: OutputFormat`, alongside a spreadsheet view and
+   `.xlsx` export driven by `variant.spreadsheetColumns`.
 
 Generic shapes - `CellValue`, `Row`, `Group`, `isNa` - live in
 [`core/row.ts`](src/core/row.ts): the "prepared row" form every variant's
@@ -81,6 +84,19 @@ are all driven generically by the `VariantBundle` interface
      `serialize` as `meta`
    - `spreadsheetColumns: ColumnDef[]` - the column layout used by the
      Preview step's spreadsheet view and `.xlsx` export
+   - `bulkEditSchema?: BulkEditField[]` - optional fields offered in the Edit
+     step's bulk-edit modal (multi-row "Select multiple" → Edit), each a
+     `dropdown` (with `options`), `text`, or `number` input keyed to a field;
+     omit unique-per-row fields like point name/address (see Argos's and
+     Kepware's bundles for the convention)
+   - `output: OutputFormat` - `{ label, extension, mimeType, syntax }`
+     describing the generated text, so the Preview step can render
+     (`syntax: 'xml' | 'plain'`), label, and export it without assuming XML
+   - `sample?: string` - a short, representative snippet of this variant's
+     output, offered as a download via the Import step's "Sample output"
+     button (alongside a "Sample input" button that downloads a sample
+     register-map spreadsheet, the same for every variant since the import
+     pipeline is shared) so users know what they'll get before committing to it
    - `validateRow(row): Record<string, string>` - per-row validation;
      return `{ fieldKey: errorMessage }` for each invalid cell (an empty
      object means the row is valid)
@@ -167,3 +183,10 @@ npm run dev        # http://localhost:5173
 assert the TS port matches a set of pre-generated fixtures
 (`src/core/__tests__/fixtures/parity.json`) byte-for-byte, locking the port
 to the original implementation's exact output.
+
+Kepware has no Python oracle to match (it's a new format, not a port), so
+its suite (`src/core/variants/kepware/__tests__/parity.test.ts`, fixture in
+`__tests__/fixtures/kepware.json`) instead locks the *TS serializer to
+itself*: a small representative input (mixed register types, a scaled value,
+a write tag, an unscaled value) must always serialize to the same
+byte-for-byte CSV string.

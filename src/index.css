@@ -399,6 +399,16 @@ a:hover { color: var(--c-accent-hover); }
   background: var(--c-accent-subtle);
 }
 
+.drop-zone--disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.drop-zone--disabled:hover {
+  border-color: var(--c-border);
+  background: transparent;
+}
+
 .drop-zone-icon {
   font-size: 2rem;
   line-height: 1;
@@ -835,8 +845,8 @@ a:hover { color: var(--c-accent-hover); }
   letter-spacing: -0.04em;
 }
 
-/* ── XML preview ─────────────────────────────────────────── */
-pre.xml-preview {
+/* ── Code/text preview (Preview step) ───────────────────── */
+pre.code-preview {
   background: var(--c-surface);
   padding: 16px 20px;
   overflow: auto;

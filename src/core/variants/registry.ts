@@ -2,7 +2,8 @@
 // WebSupervisor, ...) means writing one more bundle and listing it here.
 
 import { argosVariant } from './argos';
+import { kepwareVariant } from './kepware';
 import type { VariantBundle } from './types';
 
-export const VARIANTS: VariantBundle[] = [argosVariant];
+export const VARIANTS: VariantBundle[] = [argosVariant, kepwareVariant];
 export const DEFAULT_VARIANT: VariantBundle = argosVariant;
