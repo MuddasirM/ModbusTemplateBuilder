@@ -21,7 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import type { CellValue } from '../core/row';
-import type { FieldDef, MetadataFieldDef } from '../core/variants/types';
+import type { BulkEditField, FieldDef, MetadataFieldDef } from '../core/variants/types';
 import type { PointErrors, Source, GroupState, PointState } from '../App';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -38,6 +38,7 @@ interface Props {
   metadataFields: MetadataFieldDef[];
   meta: Record<string, CellValue>;
   setMeta: Dispatch<SetStateAction<Record<string, CellValue>>>;
+  bulkEditSchema: BulkEditField[];
   pointErrors: PointErrors | null;
   onBack: () => void;
   onGenerate: () => void;
@@ -89,14 +90,121 @@ function ConfirmDialog({ message, confirmLabel, onConfirm, onCancel }: ConfirmDi
   );
 }
 
+// ── Bulk edit modal (multi-select mode) ──────────────────────────────────────
+interface BulkEditModalProps {
+  schema: BulkEditField[];
+  groupNames: string[];
+  count: number;
+  onApply: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}
+
+function BulkEditModal({ schema, groupNames, count, onApply, onCancel }: BulkEditModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.showModal();
+    const handleCancel = () => onCancel();
+    el.addEventListener('cancel', handleCancel);
+    return () => el.removeEventListener('cancel', handleCancel);
+  }, [onCancel]);
+
+  function handleBackdrop(e: React.MouseEvent<HTMLDialogElement>) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (
+      e.clientX < rect.left || e.clientX > rect.right ||
+      e.clientY < rect.top || e.clientY > rect.bottom
+    ) onCancel();
+  }
+
+  function setValue(key: string, val: string) {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function handleApply() {
+    const filled = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v.trim() !== ''),
+    );
+    onApply(filled);
+  }
+
+  return (
+    <dialog ref={ref} className="bulk-edit-dialog" onClick={handleBackdrop}>
+      <div className="bulk-edit-inner">
+        <div className="bulk-edit-header">
+          <span className="bulk-edit-title">// bulk edit</span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
+            [×]
+          </button>
+        </div>
+
+        <p className="bulk-edit-disclaimer">
+          All {count} selected row{count !== 1 ? 's' : ''} will be updated with the values entered below.
+        </p>
+
+        <div className="bulk-edit-body">
+          {schema.map((f) => {
+            const options = f.type === 'dropdown'
+              ? (f.key === 'group_name' ? groupNames.map((n) => ({ value: n, label: n })) : f.options)
+              : null;
+            return (
+              <div key={f.key} className="field-group">
+                <label className="field-label" htmlFor={`bulk-${f.key}`}>{f.label}</label>
+                {options ? (
+                  <select
+                    id={`bulk-${f.key}`}
+                    className="field-select"
+                    value={values[f.key] ?? ''}
+                    onChange={(e) => setValue(f.key, e.target.value)}
+                  >
+                    <option value="">(leave unchanged)</option>
+                    {options.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id={`bulk-${f.key}`}
+                    className="field-input"
+                    type={f.type === 'number' ? 'number' : 'text'}
+                    min={f.type === 'number' ? f.min : undefined}
+                    max={f.type === 'number' ? f.max : undefined}
+                    placeholder="(leave unchanged)"
+                    value={values[f.key] ?? ''}
+                    onChange={(e) => setValue(f.key, e.target.value)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="bulk-edit-actions">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={handleApply}>
+            Apply
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 // ── Column visibility dropdown ────────────────────────────────────────────────
 interface ColumnVisibilityMenuProps {
   fields: FieldDef[];
   visibleFields: string[];
   onToggle: (key: string) => void;
+  disabled?: boolean;
 }
 
-function ColumnVisibilityMenu({ fields, visibleFields, onToggle }: ColumnVisibilityMenuProps) {
+function ColumnVisibilityMenu({ fields, visibleFields, onToggle, disabled = false }: ColumnVisibilityMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -109,11 +217,15 @@ function ColumnVisibilityMenu({ fields, visibleFields, onToggle }: ColumnVisibil
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [open]);
 
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   const optional = fields.filter((f) => !f.required);
 
   return (
     <div className="col-menu" ref={ref}>
-      <button type="button" className="btn btn-sm" onClick={() => setOpen((o) => !o)} title="Show or hide table columns">
+      <button type="button" className="btn btn-sm" onClick={() => setOpen((o) => !o)} disabled={disabled} title="Show or hide table columns">
         Columns ▾
       </button>
       {open && (
@@ -135,9 +247,9 @@ function ColumnVisibilityMenu({ fields, visibleFields, onToggle }: ColumnVisibil
 }
 
 // ── Drag handle icon ──────────────────────────────────────────────────────────
-function DragHandle(props: React.HTMLAttributes<HTMLSpanElement>) {
+function DragHandle({ muted, ...props }: React.HTMLAttributes<HTMLSpanElement> & { muted?: boolean }) {
   return (
-    <span className="drag-handle" aria-hidden="true" {...props}>
+    <span className={`drag-handle${muted ? ' drag-handle-muted' : ''}`} aria-hidden="true" {...props}>
       ⠿
     </span>
   );
@@ -154,6 +266,10 @@ interface PointRowProps {
   onCommit: (key: string) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  multiSelectMode?: boolean;
+  selected?: boolean;
+  onSelectPointerDown?: (e: React.PointerEvent) => void;
+  onSelectKeyDown?: (e: React.KeyboardEvent) => void;
   overlay?: boolean;
 }
 
@@ -167,6 +283,10 @@ const PointRow = memo(function PointRow({
   onCommit,
   onDelete,
   onDuplicate,
+  multiSelectMode = false,
+  selected = false,
+  onSelectPointerDown,
+  onSelectKeyDown,
   overlay = false,
 }: PointRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -178,10 +298,33 @@ const PointRow = memo(function PointRow({
     opacity: isDragging && !overlay ? 0.3 : 1,
   };
 
+  const rowClasses = [
+    isDragging && !overlay ? 'row-dragging' : '',
+    multiSelectMode ? 'row-select-mode' : '',
+    selected ? 'row-selected' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <tr ref={setNodeRef} style={style} className={isDragging && !overlay ? 'row-dragging' : ''}>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={rowClasses || undefined}
+      data-point-id={point.id}
+    >
+      {multiSelectMode && (
+        <td className="select-cell">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => { /* selection state is driven by pointer/keyboard handlers */ }}
+            onPointerDown={onSelectPointerDown}
+            onKeyDown={onSelectKeyDown}
+            aria-label={`Select row ${rowNum}`}
+          />
+        </td>
+      )}
       <td className="drag-cell">
-        <DragHandle {...attributes} {...listeners} />
+        <DragHandle muted={multiSelectMode} {...(multiSelectMode ? {} : { ...attributes, ...listeners })} />
       </td>
       <td className="row-num">{rowNum}</td>
       {columns.map((f) => {
@@ -200,6 +343,7 @@ const PointRow = memo(function PointRow({
                 value={point.data[f.key] ?? ''}
                 onChange={(e) => onUpdate(f.key, e.target.value)}
                 onBlur={() => onCommit(f.key)}
+                disabled={multiSelectMode}
                 title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
               >
                 {choiceOpts.map((c) => (
@@ -212,6 +356,7 @@ const PointRow = memo(function PointRow({
                 value={point.data[f.key] ?? ''}
                 onChange={(e) => onUpdate(f.key, e.target.value)}
                 onBlur={() => onCommit(f.key)}
+                disabled={multiSelectMode}
                 title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
               />
             )}
@@ -219,10 +364,10 @@ const PointRow = memo(function PointRow({
         );
       })}
       <td className="row-actions">
-        <button type="button" className="btn btn-ghost btn-sm" title="Duplicate row" onClick={onDuplicate}>
+        <button type="button" className="btn btn-ghost btn-sm" title="Duplicate row" onClick={onDuplicate} disabled={multiSelectMode}>
           ⧉
         </button>
-        <button type="button" className="btn btn-danger btn-sm" title="Delete row" onClick={onDelete}>
+        <button type="button" className="btn btn-danger btn-sm" title="Delete row" onClick={onDelete} disabled={multiSelectMode}>
           ×
         </button>
       </td>
@@ -233,8 +378,33 @@ const PointRow = memo(function PointRow({
   prev.rowNum === next.rowNum &&
   prev.errors === next.errors &&
   prev.columns === next.columns &&
+  prev.multiSelectMode === next.multiSelectMode &&
+  prev.selected === next.selected &&
   prev.overlay === next.overlay,
 );
+
+// ── Group selection checkbox (tri-state: off / on / indeterminate) ───────────
+interface GroupCheckboxProps {
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: () => void;
+}
+
+function GroupCheckbox({ checked, indeterminate, onChange }: GroupCheckboxProps) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      aria-label="Select all rows in this group"
+    />
+  );
+}
 
 // ── Sortable group section ────────────────────────────────────────────────────
 interface GroupSectionProps {
@@ -250,6 +420,11 @@ interface GroupSectionProps {
   onCommitPoint: (pointId: string, key: string) => void;
   onDeletePoint: (pointId: string) => void;
   onDuplicatePoint: (pointId: string) => void;
+  multiSelectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleGroupSelect?: (group: GroupState) => void;
+  onPointSelectPointerDown?: (pointId: string, e: React.PointerEvent) => void;
+  onPointSelectKeyDown?: (pointId: string, e: React.KeyboardEvent) => void;
   overlay?: boolean;
 }
 
@@ -266,6 +441,11 @@ function GroupSection({
   onCommitPoint,
   onDeletePoint,
   onDuplicatePoint,
+  multiSelectMode = false,
+  selectedIds,
+  onToggleGroupSelect,
+  onPointSelectPointerDown,
+  onPointSelectKeyDown,
   overlay = false,
 }: GroupSectionProps) {
   const {
@@ -288,12 +468,29 @@ function GroupSection({
   const pointIds = visiblePoints.map((p) => p.id);
   const noMatches = searchActive && !isEmpty && visiblePoints.length === 0;
 
+  // Full-width spans must grow by one when the checkbox column is present.
+  const extraCol = multiSelectMode ? 1 : 0;
+  const selectedCount = selectedIds ? group.points.filter((p) => selectedIds.has(p.id)).length : 0;
+  const groupChecked = !isEmpty && selectedCount === group.points.length;
+  const groupIndeterminate = selectedCount > 0 && selectedCount < group.points.length;
+
   return (
     <tbody ref={setNodeRef} style={style} className="group-section">
       {/* Group header row */}
       <tr className={`group-header-row${isEmpty ? ' group-empty' : ''}`}>
+        {multiSelectMode && (
+          <td className="select-cell">
+            {!isEmpty && (
+              <GroupCheckbox
+                checked={groupChecked}
+                indeterminate={groupIndeterminate}
+                onChange={() => onToggleGroupSelect?.(group)}
+              />
+            )}
+          </td>
+        )}
         <td className="drag-cell">
-          <DragHandle {...attributes} {...listeners} />
+          <DragHandle muted={multiSelectMode} {...(multiSelectMode ? {} : { ...attributes, ...listeners })} />
         </td>
         <td colSpan={columns.length + 1} className="group-header-cell">
           <div className="group-header-inner">
@@ -301,6 +498,7 @@ function GroupSection({
               className="group-name-input"
               value={group.name}
               onChange={(e) => onRename(e.target.value)}
+              disabled={multiSelectMode}
               aria-label="Group name"
             />
             <span className="group-point-count">({group.points.length})</span>
@@ -315,6 +513,7 @@ function GroupSection({
             className="btn btn-danger btn-sm"
             title="Delete group"
             onClick={onDelete}
+            disabled={multiSelectMode}
           >
             ×
           </button>
@@ -335,20 +534,24 @@ function GroupSection({
             onCommit={(key) => onCommitPoint(point.id, key)}
             onDelete={() => onDeletePoint(point.id)}
             onDuplicate={() => onDuplicatePoint(point.id)}
+            multiSelectMode={multiSelectMode}
+            selected={selectedIds?.has(point.id) ?? false}
+            onSelectPointerDown={(e) => onPointSelectPointerDown?.(point.id, e)}
+            onSelectKeyDown={(e) => onPointSelectKeyDown?.(point.id, e)}
           />
         ))}
       </SortableContext>
 
       {isEmpty && (
         <tr className="group-empty-row">
-          <td colSpan={columns.length + 3} className="group-empty-cell">
+          <td colSpan={columns.length + 3 + extraCol} className="group-empty-cell">
             No points. Drag points here or delete this group.
           </td>
         </tr>
       )}
       {noMatches && (
         <tr className="group-empty-row">
-          <td colSpan={columns.length + 3} className="group-empty-cell">
+          <td colSpan={columns.length + 3 + extraCol} className="group-empty-cell">
             No rows match your search.
           </td>
         </tr>
@@ -368,6 +571,7 @@ export function EditStep({
   metadataFields,
   meta,
   setMeta,
+  bulkEditSchema,
   pointErrors,
   onBack,
   onGenerate,
@@ -396,6 +600,40 @@ export function EditStep({
 
   // Row search
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ── Multi-select mode ─────────────────────────────────────────────────────
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState<{ count: number } | null>(null);
+
+  const exitMultiSelect = useCallback(() => {
+    setMultiSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  function toggleMultiSelect() {
+    if (multiSelectMode) {
+      exitMultiSelect();
+    } else {
+      // Selection ranges and Shift+Arrow nav assume every row is visible.
+      setSearchQuery('');
+      setMultiSelectMode(true);
+    }
+  }
+
+  // ESC cancels multi-select, but only when no dialog is on top of it - an
+  // open dialog's own `cancel` handler should get the keypress first.
+  useEffect(() => {
+    if (!multiSelectMode) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (bulkEditOpen || confirmBulkDelete || confirmDelete || confirmDeletePoint || confirmClearField) return;
+      exitMultiSelect();
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [multiSelectMode, bulkEditOpen, confirmBulkDelete, confirmDelete, confirmDeletePoint, confirmClearField, exitMultiSelect]);
 
   // Drag state
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -701,6 +939,147 @@ export function EditStep({
     fields.some((f) => String(p.data[f.key] ?? '').toLowerCase().includes(searchQueryNorm)),
     [fields, searchQueryNorm]);
 
+  // ── Multi-select mechanics ────────────────────────────────────────────────
+  // Render-order list of every point id, the basis for range selection and
+  // Shift+Arrow nav (both need to walk rows across group boundaries).
+  const flatPointIds = groups.flatMap((g) => g.points.map((p) => p.id));
+
+  const dragSelectRef = useRef<{
+    anchorId: string;
+    select: boolean;
+    base: Set<string>;
+  } | null>(null);
+
+  function selectionRange(fromId: string, toId: string): string[] {
+    const a = flatPointIds.indexOf(fromId);
+    const b = flatPointIds.indexOf(toId);
+    if (a < 0 || b < 0) return [fromId];
+    const [lo, hi] = a <= b ? [a, b] : [b, a];
+    return flatPointIds.slice(lo, hi + 1);
+  }
+
+  function applySelectionRange(toId: string) {
+    const ds = dragSelectRef.current;
+    if (!ds) return;
+    const range = selectionRange(ds.anchorId, toId);
+    const next = new Set(ds.base);
+    for (const id of range) {
+      if (ds.select) next.add(id); else next.delete(id);
+    }
+    setSelectedIds(next);
+  }
+
+  // Click-to-toggle and click-and-drag range selection share this entry
+  // point: a plain click is just a one-row "range".
+  function onPointSelectPointerDown(pointId: string, e: React.PointerEvent) {
+    if (!multiSelectMode) return;
+    e.preventDefault();
+    dragSelectRef.current = {
+      anchorId: pointId,
+      select: !selectedIds.has(pointId),
+      base: new Set(selectedIds),
+    };
+    applySelectionRange(pointId);
+
+    function onMove(ev: PointerEvent) {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const row = el?.closest('[data-point-id]') as HTMLElement | null;
+      if (row?.dataset.pointId) applySelectionRange(row.dataset.pointId);
+    }
+    function onUp() {
+      dragSelectRef.current = null;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  // Shift+Up/Down extends the selection one row at a time, across group
+  // boundaries, and moves focus along with it.
+  function onPointSelectKeyDown(pointId: string, e: React.KeyboardEvent) {
+    if (!multiSelectMode || !e.shiftKey) return;
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const idx = flatPointIds.indexOf(pointId);
+    if (idx < 0) return;
+    const nextIdx = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+    if (nextIdx < 0 || nextIdx >= flatPointIds.length) return;
+    const nextId = flatPointIds[nextIdx];
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.add(pointId);
+      next.add(nextId);
+      return next;
+    });
+    requestAnimationFrame(() => {
+      const el = document.querySelector(
+        `[data-point-id="${nextId}"] .select-cell input[type="checkbox"]`,
+      ) as HTMLElement | null;
+      el?.focus();
+    });
+  }
+
+  function toggleGroupSelection(group: GroupState) {
+    if (group.points.length === 0) return;
+    const allSelected = group.points.every((p) => selectedIds.has(p.id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const p of group.points) {
+        if (allSelected) next.delete(p.id); else next.add(p.id);
+      }
+      return next;
+    });
+  }
+
+  function requestBulkDelete() {
+    if (selectedIds.size === 0) return;
+    setConfirmBulkDelete({ count: selectedIds.size });
+  }
+
+  function applyBulkDelete() {
+    setGroups((prev) => prev.map((g) => ({
+      ...g,
+      points: g.points.filter((p) => !selectedIds.has(p.id)),
+    })));
+    setConfirmBulkDelete(null);
+    exitMultiSelect();
+  }
+
+  function applyBulkEdit(values: Record<string, string>) {
+    const { group_name: targetGroupName, ...fieldValues } = values;
+    setGroups((prev) => {
+      let next = prev.map((g) => ({
+        ...g,
+        points: g.points.map((p) =>
+          selectedIds.has(p.id) ? { ...p, data: { ...p.data, ...fieldValues } } : p,
+        ),
+      }));
+
+      if (targetGroupName) {
+        const moved: PointState[] = [];
+        next = next.map((g) => ({
+          ...g,
+          points: g.points.filter((p) => {
+            if (!selectedIds.has(p.id)) return true;
+            moved.push({ ...p, data: { ...p.data, group_name: targetGroupName } });
+            return false;
+          }),
+        }));
+
+        const targetIdx = next.findIndex((g) => g.name === targetGroupName);
+        if (targetIdx >= 0) {
+          next = next.map((g, i) => i === targetIdx ? { ...g, points: [...g.points, ...moved] } : g);
+        } else {
+          next = [...next, { id: newId(), name: targetGroupName, points: moved }];
+        }
+      }
+
+      return next;
+    });
+    setBulkEditOpen(false);
+  }
+
   // Disabled reason for the generate button (feature 3)
   const generateDisabledReason =
     totalPoints === 0
@@ -728,13 +1107,11 @@ export function EditStep({
     <div className="flex flex-col grow overflow-hidden">
       {/* Toolbar */}
       <div className="step-toolbar">
-        {/* Row 1 — navigation: Back (left), Preview XML (right) */}
+        {/* Row 1 — navigation: Back */}
         <div className="toolbar-row toolbar-row-nav">
           <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={onBack}>
             {backLabel}
           </button>
-
-
         </div>
 
         {/* Row 2 — template metadata (Template Name, Version, ...) */}
@@ -752,13 +1129,15 @@ export function EditStep({
                   value={String(meta[m.key] ?? '')}
                   style={{ width }}
                   onChange={(e) => updateMeta(m.key, e.target.value)}
+                  disabled={multiSelectMode}
                 />
               </div>
             );
           })}
         </div>
 
-        {/* Row 3 — table controls: counter, search, column visibility, address shift */}
+        {/* Row 3 — table controls: search, column visibility, address shift,
+            and the multi-select toggle / bulk-action cluster */}
         <div className="toolbar-row toolbar-row-table">
           <input
             type="search"
@@ -766,6 +1145,7 @@ export function EditStep({
             placeholder="Search rows…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={multiSelectMode}
             aria-label="Search rows"
           />
 
@@ -775,15 +1155,64 @@ export function EditStep({
             onToggle={(key) => setVisibleFields(
               visibleFields.includes(key) ? visibleFields.filter((k) => k !== key) : [...visibleFields, key],
             )}
+            disabled={multiSelectMode}
           />
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="toolbar-meta">Addresses:</span>
-            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(-1)} title="Shift all addresses by -1">−1</button>
-            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(1)} title="Shift all addresses by +1">+1</button>
+            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(-1)} disabled={multiSelectMode} title="Shift all addresses by -1">−1</button>
+            <button type="button" className="btn btn-sm" onClick={() => shiftAddresses(1)} disabled={multiSelectMode} title="Shift all addresses by +1">+1</button>
+          </div>
+
+          <div className="multi-select-controls">
+            {!multiSelectMode ? (
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={toggleMultiSelect}
+                title="Select multiple rows to edit or delete them together"
+              >
+                Select multiple
+              </button>
+            ) : (
+              <>
+                {selectedIds.size > 0 && (
+                  <span className="selection-count">
+                    {selectedIds.size} row{selectedIds.size !== 1 ? 's' : ''} selected
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  disabled={selectedIds.size === 0}
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  disabled={selectedIds.size === 0}
+                  onClick={requestBulkDelete}
+                >
+                  Delete
+                </button>
+                <button type="button" className="btn btn-sm" onClick={exitMultiSelect}>
+                  OK
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Multi-select instructions banner */}
+      {multiSelectMode && (
+        <div className="alert alert-warning multi-select-banner" style={{ flexShrink: 0 }}>
+          Click and drag across the row checkboxes to select multiple rows. Dragging anywhere
+          else in the table will not select them.
+        </div>
+      )}
 
       {/* Error summary */}
       {errorSummary.length > 0 && (
@@ -817,6 +1246,7 @@ export function EditStep({
           <table className="register-table" style={{ tableLayout: 'fixed', minWidth: 600 }}>
             <thead>
               <tr>
+                {multiSelectMode && <th className="select-cell" style={{ width: 32 }} />}
                 <th style={{ width: 28 }} />
                 <th style={{ width: 36 }}>#</th>
                 {columns.map((f) => (
@@ -872,6 +1302,11 @@ export function EditStep({
                     });
                   }}
                   onDuplicatePoint={(pid) => duplicatePoint(group.id, pid)}
+                  multiSelectMode={multiSelectMode}
+                  selectedIds={selectedIds}
+                  onToggleGroupSelect={toggleGroupSelection}
+                  onPointSelectPointerDown={onPointSelectPointerDown}
+                  onPointSelectKeyDown={onPointSelectKeyDown}
                 />
               ))}
             </SortableContext>
@@ -879,8 +1314,8 @@ export function EditStep({
             {/* Add group footer */}
             <tbody>
               <tr>
-                <td colSpan={columns.length + 3} className="add-group-cell">
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={addGroup}>
+                <td colSpan={columns.length + 3 + (multiSelectMode ? 1 : 0)} className="add-group-cell">
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={addGroup} disabled={multiSelectMode}>
                     + Add group
                   </button>
                 </td>
@@ -933,6 +1368,27 @@ export function EditStep({
               confirmLabel="Clear"
               onConfirm={() => { clearFieldData(confirmClearField.key); setConfirmClearField(null); }}
               onCancel={() => setConfirmClearField(null)}
+            />
+          )}
+
+          {/* Confirm bulk-delete dialog */}
+          {confirmBulkDelete && (
+            <ConfirmDialog
+              message={`Delete ${confirmBulkDelete.count} selected row${confirmBulkDelete.count !== 1 ? 's' : ''}? This cannot be undone.`}
+              confirmLabel="Delete"
+              onConfirm={applyBulkDelete}
+              onCancel={() => setConfirmBulkDelete(null)}
+            />
+          )}
+
+          {/* Bulk edit modal */}
+          {bulkEditOpen && (
+            <BulkEditModal
+              schema={bulkEditSchema}
+              groupNames={groups.map((g) => g.name)}
+              count={selectedIds.size}
+              onApply={applyBulkEdit}
+              onCancel={() => setBulkEditOpen(false)}
             />
           )}
 

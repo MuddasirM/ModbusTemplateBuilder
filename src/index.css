@@ -581,6 +581,26 @@ a:hover { color: var(--c-accent-hover); }
   align-self: center;
 }
 
+/* ── Multi-select toggle / bulk-action cluster ───────────── */
+.multi-select-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.selection-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-accent);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.multi-select-banner {
+  flex-shrink: 0;
+}
+
 /* ── Search input (Edit toolbar) ─────────────────────────── */
 .search-input {
   width: 180px;
@@ -627,6 +647,18 @@ a:hover { color: var(--c-accent-hover); }
 }
 
 .col-menu-item input[type='checkbox'] {
+  accent-color: var(--c-accent);
+  cursor: pointer;
+}
+
+/* ── Multi-select checkboxes ─────────────────────────────── */
+.select-cell {
+  width: 32px;
+  padding: 2px 4px !important;
+  text-align: center;
+}
+
+.select-cell input[type='checkbox'] {
   accent-color: var(--c-accent);
   cursor: pointer;
 }
@@ -1355,6 +1387,13 @@ pre.xml-preview {
 .drag-handle:hover { color: var(--c-ink-muted); }
 .drag-handle:active { cursor: grabbing; }
 
+.drag-handle-muted {
+  cursor: default;
+  color: var(--c-ink-dim);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .drag-cell {
   width: 28px;
   padding: 0 4px !important;
@@ -1529,6 +1568,77 @@ pre.xml-preview {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+/* ── Bulk edit modal ─────────────────────────────────────── */
+.bulk-edit-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 0;
+  padding: 0;
+  color: var(--c-ink);
+  font-family: var(--f-mono);
+  box-shadow: 0 16px 48px oklch(0 0 0 / 0.70);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-edit-dialog::backdrop {
+  background: oklch(0 0 0 / 0.65);
+}
+
+.bulk-edit-inner {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100dvh - 48px);
+}
+
+.bulk-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--c-border-muted);
+  flex-shrink: 0;
+}
+
+.bulk-edit-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-accent);
+}
+
+.bulk-edit-disclaimer {
+  margin: 0;
+  padding: 14px 20px 0;
+  font-size: 0.75rem;
+  color: var(--c-ink-muted);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.bulk-edit-body {
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bulk-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid var(--c-border-muted);
+  flex-shrink: 0;
 }
 
 /* ── Group point count ───────────────────────────────────── */

@@ -231,6 +231,7 @@ export function App() {
               visibleFields={visibleFields}
               setVisibleFields={setVisibleFields}
               metadataFields={variant.metadata}
+              bulkEditSchema={variant.bulkEditSchema ?? []}
               meta={meta}
               setMeta={setMeta}
               pointErrors={pointErrors}

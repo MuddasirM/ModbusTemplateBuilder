@@ -32,6 +32,25 @@ export interface ColumnDef {
   header: string;
 }
 
+/** A field offered in the Edit step's bulk-edit modal: which key it writes,
+ * how it's labelled, and what kind of input it gets. Point Name and Register
+ * Address must never appear here (unique per row, bulk overwrite makes no
+ * sense / would create duplicates). */
+export type BulkEditField =
+  | {
+      key: string;
+      label: string;
+      type: 'dropdown';
+      options: { value: string; label: string }[];
+    }
+  | {
+      key: string;
+      label: string;
+      type: 'text' | 'number';
+      min?: number;
+      max?: number;
+    };
+
 export interface VariantBundle {
   id: string;
   label: string;
@@ -45,6 +64,9 @@ export interface VariantBundle {
   aliases: Record<string, string>;
   metadata: MetadataFieldDef[];
   spreadsheetColumns: ColumnDef[];
+  /** Fields offered in the Edit step's bulk-edit modal, in display order.
+   * Optional: a variant with nothing meaningful to bulk-edit can omit it. */
+  bulkEditSchema?: BulkEditField[];
 
   validateRow(row: Row): Record<string, string>;
   serialize(groups: Group[], meta: Record<string, CellValue>): string;
