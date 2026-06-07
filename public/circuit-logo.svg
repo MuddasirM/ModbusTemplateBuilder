@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .b { fill: none; stroke: oklch(0.75 0.18 75); stroke-width: 4.5; stroke-linecap: square; stroke-linejoin: miter; }
+    .d { fill: oklch(0.75 0.18 75); }
+    .p { fill: none; stroke: oklch(0.75 0.18 75); stroke-width: 4; }
+    @media (prefers-color-scheme: light) {
+      .b { stroke: oklch(0.46 0.22 65); }
+      .d { fill: oklch(0.46 0.22 65); }
+      .p { stroke: oklch(0.46 0.22 65); }
+    }
+  </style>
+  <!-- IC body -->
+  <rect x="27" y="27" width="46" height="46" class="b"/>
+  <!-- Pin 1 dot -->
+  <circle cx="33" cy="33" r="2.5" class="d"/>
+  <!-- Left pins -->
+  <line x1="27" y1="36" x2="18" y2="36" class="b"/>
+  <line x1="27" y1="44" x2="18" y2="44" class="b"/>
+  <line x1="27" y1="56" x2="18" y2="56" class="b"/>
+  <line x1="27" y1="64" x2="18" y2="64" class="b"/>
+  <!-- Right pins -->
+  <line x1="73" y1="36" x2="82" y2="36" class="b"/>
+  <line x1="73" y1="44" x2="82" y2="44" class="b"/>
+  <line x1="73" y1="56" x2="82" y2="56" class="b"/>
+  <line x1="73" y1="64" x2="82" y2="64" class="b"/>
+  <!-- Top pins -->
+  <line x1="36" y1="27" x2="36" y2="18" class="b"/>
+  <line x1="44" y1="27" x2="44" y2="18" class="b"/>
+  <line x1="56" y1="27" x2="56" y2="18" class="b"/>
+  <line x1="64" y1="27" x2="64" y2="18" class="b"/>
+  <!-- Bottom pins -->
+  <line x1="36" y1="73" x2="36" y2="82" class="b"/>
+  <line x1="44" y1="73" x2="44" y2="82" class="b"/>
+  <line x1="56" y1="73" x2="56" y2="82" class="b"/>
+  <line x1="64" y1="73" x2="64" y2="82" class="b"/>
+  <!-- Trace A: left straight -->
+  <line x1="18" y1="44" x2="7" y2="44" class="b"/>
+  <circle cx="7" cy="44" r="4" class="p"/>
+  <!-- Trace B: left L-turn down -->
+  <polyline points="18,56 8,56 8,68" class="b"/>
+  <circle cx="8" cy="68" r="4" class="p"/>
+  <!-- Trace C: right straight -->
+  <line x1="82" y1="36" x2="93" y2="36" class="b"/>
+  <circle cx="93" cy="36" r="4" class="p"/>
+  <!-- Trace D: top L-turn left -->
+  <polyline points="56,18 56,10 42,10 42,7" class="b"/>
+  <circle cx="42" cy="7" r="4" class="p"/>
+  <!-- Trace E: bottom straight -->
+  <line x1="44" y1="82" x2="44" y2="93" class="b"/>
+  <circle cx="44" cy="93" r="4" class="p"/>
+</svg>

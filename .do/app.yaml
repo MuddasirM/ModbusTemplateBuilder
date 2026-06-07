@@ -1,0 +1,30 @@
+# DigitalOcean App Platform spec. Cheapest hosting for this client-side SPA is a
+# Static Site (free Starter tier covers up to 3 sites).
+#
+# Deploy with either:
+#   doctl apps create --spec web/.do/app.yaml
+# or in the DO console: Apps → Create → pick this repo → it auto-detects this spec.
+#
+# Replace `repo` with your connected GitHub/GitLab repository (owner/name).
+name: argos-modbus-builder
+region: ams        # pick the region closest to your users
+static_sites:
+  - name: web
+    git:
+      repo_clone_url: REPLACE_WITH_YOUR_REPO_GIT_URL   # e.g. https://github.com/enlite/template-tool.git
+      branch: main
+    source_dir: web
+    build_command: npm ci && npm run build
+    output_dir: dist
+    # SPA: serve index.html for unknown routes.
+    catchall_document: index.html
+    envs:
+      # Buildpack Node version (needs >=20.19 for Vite 7).
+      - key: NODE_VERSION
+        scope: BUILD_TIME
+        value: "22"
+      # Only needed if npm.enlite.energy ever requires auth (see DEPLOY.md).
+      # - key: NPM_TOKEN
+      #   scope: BUILD_TIME
+      #   type: SECRET
+      #   value: "<your-registry-token>"

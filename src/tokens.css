@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════════
+   COLOR TOKENS: edit this file to tweak both themes.
+   All values use OKLCH: oklch(Lightness Chroma Hue)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Dark theme: Amber Terminal ────────────────────────────── */
+:root {
+  /* Surfaces */
+  --c-bg:              oklch(0.07 0.010 60);
+  --c-surface:         oklch(0.11 0.010 60);
+  --c-surface-raised:  oklch(0.15 0.010 60);
+  --c-border:          oklch(0.22 0.012 60);
+  --c-border-muted:    oklch(0.16 0.008 60);
+
+  /* Text */
+  --c-ink:             oklch(0.92 0.012 75);
+  --c-ink-muted:       oklch(0.70 0.010 70);
+  --c-ink-dim:         oklch(0.60 0.008 65);
+
+  /* Amber accent */
+  --c-accent:          oklch(0.75 0.18 75);
+  --c-accent-deep:     oklch(0.60 0.18 72);
+  --c-accent-hover:    oklch(0.82 0.16 78);
+  --c-accent-subtle:   oklch(0.12 0.06 68);
+
+  /* Semantic */
+  --c-danger:          oklch(0.70 0.18 25);
+  --c-danger-subtle:   oklch(0.12 0.06 25);
+  --c-success:         oklch(0.70 0.15 145);
+  --c-success-subtle:  oklch(0.12 0.06 145);
+  --c-warning:         oklch(0.75 0.16 75);
+  --c-warning-subtle:  oklch(0.12 0.06 68);
+
+  /* Code syntax (XML preview) */
+  --c-code-tag:        oklch(0.72 0.12 258);
+  --c-code-attr:       oklch(0.68 0.14 242);
+  --c-code-val:        oklch(0.75 0.18 75);
+  --c-code-proc:       oklch(0.52 0.05 60);
+
+  /* Typography */
+  --f-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* Z-index scale */
+  --z-dropdown: 100;
+  --z-sticky:   200;
+
+  /* Select arrow (theme-adaptive) */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23897a5f'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+}
+
+/* ── Light theme: Amber Daylight ───────────────────────────── */
+[data-theme="light"] {
+  /* Surfaces: warm paper */
+  --c-bg:              oklch(0.97 0.006 78);
+  --c-surface:         oklch(0.93 0.007 75);
+  --c-surface-raised:  oklch(0.89 0.009 72);
+  --c-border:          oklch(0.76 0.013 68);
+  --c-border-muted:    oklch(0.87 0.008 70);
+
+  /* Text */
+  --c-ink:             oklch(0.14 0.016 55);
+  --c-ink-muted:       oklch(0.32 0.012 58);
+  --c-ink-dim:         oklch(0.40 0.010 60);
+
+  /* Amber accent: deeper for light-bg contrast */
+  --c-accent:          oklch(0.46 0.22 65);
+  --c-accent-deep:     oklch(0.38 0.24 62);
+  --c-accent-hover:    oklch(0.42 0.23 64);
+  --c-accent-subtle:   oklch(0.93 0.06 76);
+
+  /* Semantic */
+  --c-danger:          oklch(0.50 0.22 25);
+  --c-danger-subtle:   oklch(0.96 0.04 22);
+  --c-success:         oklch(0.40 0.18 145);
+  --c-success-subtle:  oklch(0.90 0.06 145);
+  --c-warning:         oklch(0.40 0.22 65);
+  --c-warning-subtle:  oklch(0.94 0.05 76);
+
+  /* Code syntax (XML preview) */
+  --c-code-tag:        oklch(0.38 0.14 258);
+  --c-code-attr:       oklch(0.34 0.16 242);
+  --c-code-val:        oklch(0.46 0.22 65);
+  --c-code-proc:       oklch(0.58 0.04 60);
+
+  /* Select arrow (light theme) */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235c4a35'/%3E%3C/svg%3E");
+
+  color-scheme: light;
+}

@@ -1,0 +1,29 @@
+id: arch
+name: Core Architecture Quality Gates
+description: Universal structural guardrails.
+rules:
+  - id: feature-isolation
+    description: No feature may import another feature transitively.
+    target: "@/features/**"
+    forbids:
+      - import: "@/features/**"
+        transitive: true # Catches indirect leaks that ESLint misses
+    allows:
+      - import: "{{TARGET_DIR}}/**"
+    fix: Extract shared logic to a @/lib or @/components module.
+
+  - id: no-tests-in-prod
+    description: Production code must never import test utilities, even transitively.
+    target: "**/*"
+    exclude:
+      - "**/*.spec"
+      - "**/*.test"
+      - "**/*.stories"
+      - "@test/**"
+      - "**/vitest.*"
+    forbids:
+      - import: "@test/**/*"
+        transitive: true
+      - import: "**/*.spec"
+        transitive: true
+    fix: Remove the import. If needed in production, extract to a non-test utility.

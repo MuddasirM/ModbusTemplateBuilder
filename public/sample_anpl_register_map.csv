@@ -1,0 +1,8 @@
+No.,Name,Address(0x),Attribute,Coefficient,Unit
+1,Grid Frequency,03E8,R,0.01,Hz
+2,Grid Voltage L1,03EA,R,0.1,V
+3,Grid Current L1,03EC,R,0.001,A
+4,Reserved,03EE,R,1,/
+5,Active Power,03F0,RW,1,kW
+6,Power Factor,03F2,R,0.001,%
+7,Energy Total,03F4,R,1,kWh
