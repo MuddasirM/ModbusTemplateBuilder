@@ -232,6 +232,8 @@ export function App() {
               setVisibleFields={setVisibleFields}
               metadataFields={variant.metadata}
               bulkEditSchema={variant.bulkEditSchema ?? []}
+              warnRow={variant.warnRow}
+              findReplaceFields={variant.findReplaceFields ?? []}
               meta={meta}
               setMeta={setMeta}
               pointErrors={pointErrors}

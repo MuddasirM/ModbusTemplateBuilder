@@ -51,6 +51,14 @@ export type BulkEditField =
       max?: number;
     };
 
+/** A field offered as a Find & Replace target in the Edit step's multi-select
+ * toolbar: which key it targets, and whether matches are exact-numeric (vs.
+ * substring). */
+export interface FindReplaceFieldDef {
+  key: string;
+  numeric: boolean;
+}
+
 export interface VariantBundle {
   id: string;
   label: string;
@@ -67,8 +75,16 @@ export interface VariantBundle {
   /** Fields offered in the Edit step's bulk-edit modal, in display order.
    * Optional: a variant with nothing meaningful to bulk-edit can omit it. */
   bulkEditSchema?: BulkEditField[];
+  /** Fields offered as Find & Replace targets in the Edit step's multi-select
+   * toolbar, in display order. Optional: a variant can omit it (no button
+   * shown if the resulting list is empty). */
+  findReplaceFields?: FindReplaceFieldDef[];
 
   validateRow(row: Row): Record<string, string>;
+  /** Non-blocking, per-field warnings (e.g. "this will cause export issues"),
+   * shown distinctly from validateRow's hard errors. Optional: a variant with
+   * nothing to warn about can omit it. Same shape as validateRow's return. */
+  warnRow?(row: Row): Record<string, string>;
   serialize(groups: Group[], meta: Record<string, CellValue>): string;
   /** Inverse of `serialize`, for variants that support importing their own
    * output back in (e.g. re-editing an exported Argos XML template). */

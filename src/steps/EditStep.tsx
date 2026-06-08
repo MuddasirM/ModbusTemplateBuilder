@@ -20,13 +20,45 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import type { CellValue } from '../core/row';
-import type { BulkEditField, FieldDef, MetadataFieldDef } from '../core/variants/types';
+import type { CellValue, Row } from '../core/row';
+import type { BulkEditField, FieldDef, FindReplaceFieldDef, MetadataFieldDef } from '../core/variants/types';
 import type { PointErrors, Source, GroupState, PointState } from '../App';
 import type { Dispatch, SetStateAction } from 'react';
 
 let _idCtr = 1000;
 const newId = () => String(++_idCtr);
+
+// ── Find & Replace (multi-select) ────────────────────────────────────────────
+function replaceSubstring(value: string, find: string, replace: string, caseSensitive: boolean): string {
+  if (find === '') return value;
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(new RegExp(escaped, caseSensitive ? 'g' : 'gi'), () => replace);
+}
+
+// Mirrors commitPointField's join-existing-or-create-new behaviour, generalised
+// to a batch of points whose group_name values changed via find & replace - so
+// the structural group always agrees with each point's group_name field, the
+// same invariant a manual inline edit + blur maintains.
+function moveToMatchingGroups(groupsIn: GroupState[], pointIds: string[]): GroupState[] {
+  let next = groupsIn;
+  for (const pointId of pointIds) {
+    const source = next.find((g) => g.points.some((p) => p.id === pointId));
+    const point = source?.points.find((p) => p.id === pointId);
+    if (!source || !point) continue;
+
+    const name = point.data.group_name ?? '';
+    if (source.name === name) continue;
+
+    const target = next.find((g) => g.name === name);
+    const withoutPoint = next.map((g) =>
+      g.id !== source.id ? g : { ...g, points: g.points.filter((p) => p.id !== pointId) },
+    );
+    next = target
+      ? withoutPoint.map((g) => g.id !== target.id ? g : { ...g, points: [...g.points, point] })
+      : [...withoutPoint, { id: newId(), name, points: [point] }];
+  }
+  return next;
+}
 
 interface Props {
   source: Source;
@@ -39,6 +71,8 @@ interface Props {
   meta: Record<string, CellValue>;
   setMeta: Dispatch<SetStateAction<Record<string, CellValue>>>;
   bulkEditSchema: BulkEditField[];
+  warnRow?: (row: Row) => Record<string, string>;
+  findReplaceFields: FindReplaceFieldDef[];
   pointErrors: PointErrors | null;
   onBack: () => void;
   onGenerate: () => void;
@@ -196,6 +230,164 @@ function BulkEditModal({ schema, groupNames, count, onApply, onCancel }: BulkEdi
   );
 }
 
+// ── Find & Replace modal (multi-select mode) ─────────────────────────────────
+interface FindReplaceColumn {
+  key: string;
+  label: string;
+  numeric: boolean;
+}
+
+interface FindReplaceParams {
+  column: string;
+  find: string;
+  replace: string;
+  caseSensitive: boolean;
+}
+
+interface FindReplaceModalProps {
+  columns: FindReplaceColumn[];
+  groups: GroupState[];
+  selectedIds: Set<string>;
+  onApply: (params: FindReplaceParams) => void;
+  onCancel: () => void;
+}
+
+function FindReplaceModal({ columns, groups, selectedIds, onApply, onCancel }: FindReplaceModalProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [column, setColumn] = useState(columns[0]?.key ?? '');
+  const [find, setFind] = useState('');
+  const [replace, setReplace] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.showModal();
+    const handleCancel = () => onCancel();
+    el.addEventListener('cancel', handleCancel);
+    return () => el.removeEventListener('cancel', handleCancel);
+  }, [onCancel]);
+
+  function handleBackdrop(e: React.MouseEvent<HTMLDialogElement>) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (
+      e.clientX < rect.left || e.clientX > rect.right ||
+      e.clientY < rect.top || e.clientY > rect.bottom
+    ) onCancel();
+  }
+
+  const selected = columns.find((c) => c.key === column) ?? columns[0] ?? null;
+  const numeric = selected?.numeric ?? false;
+  const selectedCount = selectedIds.size;
+
+  let matchCount = 0;
+  if (find !== '' && selected) {
+    for (const g of groups) {
+      for (const p of g.points) {
+        if (!selectedIds.has(p.id)) continue;
+        const cellValue = String(p.data[selected.key] ?? '');
+        if (numeric) {
+          if (cellValue.trim() === find.trim()) matchCount++;
+        } else {
+          const a = caseSensitive ? cellValue : cellValue.toLowerCase();
+          const b = caseSensitive ? find : find.toLowerCase();
+          if (a.includes(b)) matchCount++;
+        }
+      }
+    }
+  }
+
+  const replaceTrim = replace.trim();
+  const replaceInvalid = numeric && (replaceTrim === '' || !Number.isFinite(Number(replaceTrim)));
+  const canApply = !!selected && find !== '' && !replaceInvalid;
+
+  function handleApply() {
+    if (!selected || !canApply) return;
+    onApply({ column: selected.key, find, replace, caseSensitive });
+  }
+
+  return (
+    <dialog ref={ref} className="bulk-edit-dialog" onClick={handleBackdrop}>
+      <div className="bulk-edit-inner">
+        <div className="bulk-edit-header">
+          <span className="bulk-edit-title">// find &amp; replace</span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
+            [×]
+          </button>
+        </div>
+
+        <div className="bulk-edit-body">
+          <div className="field-group">
+            <label className="field-label" htmlFor="fr-column">Column</label>
+            <select
+              id="fr-column"
+              className="field-select"
+              value={column}
+              onChange={(e) => setColumn(e.target.value)}
+            >
+              {columns.map((c) => (
+                <option key={c.key} value={c.key}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="fr-find">Find</label>
+            <input
+              id="fr-find"
+              className="field-input"
+              type="text"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="fr-replace">Replace with</label>
+            <input
+              id="fr-replace"
+              className="field-input"
+              type="text"
+              value={replace}
+              onChange={(e) => setReplace(e.target.value)}
+            />
+            {replaceInvalid && (
+              <span className="field-error-msg">
+                {replaceTrim === '' ? 'Enter a number.' : 'Must be a number.'}
+              </span>
+            )}
+          </div>
+
+          <label className="col-menu-item find-replace-checkbox">
+            <input
+              type="checkbox"
+              checked={caseSensitive}
+              onChange={(e) => setCaseSensitive(e.target.checked)}
+            />
+            Case sensitive
+          </label>
+
+          <p className="find-replace-preview">
+            {find === ''
+              ? '—'
+              : `${matchCount} match${matchCount !== 1 ? 'es' : ''} in ${selectedCount} selected row${selectedCount !== 1 ? 's' : ''}`}
+          </p>
+        </div>
+
+        <div className="bulk-edit-actions">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" disabled={!canApply} onClick={handleApply}>
+            Apply
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 // ── Column visibility dropdown ────────────────────────────────────────────────
 interface ColumnVisibilityMenuProps {
   fields: FieldDef[];
@@ -262,6 +454,7 @@ interface PointRowProps {
   columns: FieldDef[];
   rowNum: number;
   errors: Record<string, string> | undefined;
+  warnRow?: (row: Row) => Record<string, string>;
   onUpdate: (key: string, val: string) => void;
   onCommit: (key: string) => void;
   onDelete: () => void;
@@ -279,6 +472,7 @@ const PointRow = memo(function PointRow({
   columns,
   rowNum,
   errors,
+  warnRow,
   onUpdate,
   onCommit,
   onDelete,
@@ -327,8 +521,13 @@ const PointRow = memo(function PointRow({
         <DragHandle muted={multiSelectMode} {...(multiSelectMode ? {} : { ...attributes, ...listeners })} />
       </td>
       <td className="row-num">{rowNum}</td>
-      {columns.map((f) => {
+      {(() => {
+        const rowWarnings = warnRow?.(point.data);
+        return columns.map((f) => {
         const invalid = errors?.[f.key];
+        const warningMsg = !invalid ? rowWarnings?.[f.key] : undefined;
+        const cellClass = invalid ? 'cell-invalid' : warningMsg ? 'cell-warning' : undefined;
+        const cellTitle = invalid || warningMsg;
         const choiceOpts =
           f.type === 'choice' && f.choices
             ? f.choices.includes(point.data[f.key]) || !point.data[f.key]
@@ -336,7 +535,7 @@ const PointRow = memo(function PointRow({
               : [point.data[f.key], ...f.choices]
             : null;
         return (
-          <td key={f.key} className={invalid ? 'cell-invalid' : undefined} title={invalid}>
+          <td key={f.key} className={cellClass} title={cellTitle}>
             {choiceOpts ? (
               <select
                 className="field-select"
@@ -344,7 +543,7 @@ const PointRow = memo(function PointRow({
                 onChange={(e) => onUpdate(f.key, e.target.value)}
                 onBlur={() => onCommit(f.key)}
                 disabled={multiSelectMode}
-                title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
+                title={!cellTitle && point.data[f.key] ? String(point.data[f.key]) : undefined}
               >
                 {choiceOpts.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -357,12 +556,13 @@ const PointRow = memo(function PointRow({
                 onChange={(e) => onUpdate(f.key, e.target.value)}
                 onBlur={() => onCommit(f.key)}
                 disabled={multiSelectMode}
-                title={!invalid && point.data[f.key] ? String(point.data[f.key]) : undefined}
+                title={!cellTitle && point.data[f.key] ? String(point.data[f.key]) : undefined}
               />
             )}
           </td>
         );
-      })}
+        });
+      })()}
       <td className="row-actions">
         <button type="button" className="btn btn-ghost btn-sm" title="Duplicate row" onClick={onDuplicate} disabled={multiSelectMode}>
           ⧉
@@ -411,6 +611,7 @@ interface GroupSectionProps {
   group: GroupState;
   columns: FieldDef[];
   pointErrors: PointErrors | null;
+  warnRow?: (row: Row) => Record<string, string>;
   globalRowOffset: number;
   searchActive: boolean;
   pointMatches: (p: PointState) => boolean;
@@ -432,6 +633,7 @@ function GroupSection({
   group,
   columns,
   pointErrors,
+  warnRow,
   globalRowOffset,
   searchActive,
   pointMatches,
@@ -530,6 +732,7 @@ function GroupSection({
             columns={columns}
             rowNum={globalRowOffset + group.points.indexOf(point) + 1}
             errors={pointErrors?.[point.id]}
+            warnRow={warnRow}
             onUpdate={(key, val) => onUpdatePoint(point.id, key, val)}
             onCommit={(key) => onCommitPoint(point.id, key)}
             onDelete={() => onDeletePoint(point.id)}
@@ -572,6 +775,8 @@ export function EditStep({
   meta,
   setMeta,
   bulkEditSchema,
+  warnRow,
+  findReplaceFields,
   pointErrors,
   onBack,
   onGenerate,
@@ -605,6 +810,7 @@ export function EditStep({
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState<{ count: number } | null>(null);
 
   const exitMultiSelect = useCallback(() => {
@@ -628,12 +834,12 @@ export function EditStep({
     if (!multiSelectMode) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return;
-      if (bulkEditOpen || confirmBulkDelete || confirmDelete || confirmDeletePoint || confirmClearField) return;
+      if (bulkEditOpen || findReplaceOpen || confirmBulkDelete || confirmDelete || confirmDeletePoint || confirmClearField) return;
       exitMultiSelect();
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [multiSelectMode, bulkEditOpen, confirmBulkDelete, confirmDelete, confirmDeletePoint, confirmClearField, exitMultiSelect]);
+  }, [multiSelectMode, bulkEditOpen, findReplaceOpen, confirmBulkDelete, confirmDelete, confirmDeletePoint, confirmClearField, exitMultiSelect]);
 
   // Drag state
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -921,6 +1127,18 @@ export function EditStep({
     });
   }
 
+  // Variant warnings: non-blocking, counted separately from hard errors.
+  // Counts points (matching how errorSummary counts points with errors, not
+  // individual field-level messages).
+  let warningCount = 0;
+  if (warnRow) {
+    groups.forEach((g) => {
+      g.points.forEach((p) => {
+        if (Object.keys(warnRow(p.data)).length > 0) warningCount++;
+      });
+    });
+  }
+
   // Global row counter offsets per group
   const rowOffsets: number[] = [];
   let offset = 0;
@@ -1080,6 +1298,39 @@ export function EditStep({
     setBulkEditOpen(false);
   }
 
+  function applyFindReplace({ column, find, replace, caseSensitive }: FindReplaceParams) {
+    const numeric = findReplaceFields.find((c) => c.key === column)?.numeric ?? false;
+    const changedIds: string[] = [];
+
+    let next = groups.map((g) => ({
+      ...g,
+      points: g.points.map((p) => {
+        if (!selectedIds.has(p.id)) return p;
+        const cellValue = String(p.data[column] ?? '');
+        const nextValue = numeric
+          ? (cellValue.trim() === find.trim() ? replace.trim() : cellValue)
+          : replaceSubstring(cellValue, find, replace, caseSensitive);
+        if (nextValue === cellValue) return p;
+        changedIds.push(p.id);
+        return { ...p, data: { ...p.data, [column]: nextValue } };
+      }),
+    }));
+
+    if (column === 'group_name' && changedIds.length > 0) {
+      next = moveToMatchingGroups(next, changedIds);
+    }
+
+    setGroups(next);
+    setFindReplaceOpen(false);
+  }
+
+  // Columns offered in the Find & Replace modal: the variant's candidate set,
+  // narrowed to fields it actually exposes (FieldDef[] may differ from the
+  // bundle's full schema, e.g. via visibleFields).
+  const findReplaceColumns: FindReplaceColumn[] = findReplaceFields
+    .filter((c) => fieldByKey[c.key])
+    .map((c) => ({ key: c.key, label: fieldByKey[c.key].label, numeric: c.numeric }));
+
   // Disabled reason for the generate button (feature 3)
   const generateDisabledReason =
     totalPoints === 0
@@ -1189,6 +1440,15 @@ export function EditStep({
                 >
                   Edit
                 </button>
+                {selectedIds.size > 0 && findReplaceColumns.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => setFindReplaceOpen(true)}
+                  >
+                    Find &amp; Replace
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-danger btn-sm"
@@ -1214,23 +1474,39 @@ export function EditStep({
         </div>
       )}
 
-      {/* Error summary */}
-      {errorSummary.length > 0 && (
-        <div className="alert alert-danger error-summary-bar" style={{ flexShrink: 0 }}>
+      {/* Error / warning summary */}
+      {(errorSummary.length > 0 || warningCount > 0) && (
+        <div
+          className={`alert ${errorSummary.length > 0 ? 'alert-danger' : 'alert-warning'} error-summary-bar`}
+          style={{ flexShrink: 0 }}
+        >
           <span>
-            <strong>{errorSummary.length} error{errorSummary.length !== 1 ? 's' : ''}</strong>
-            {': '}
-            {errorSummary.slice(0, 5).join('  |  ')}
-            {errorSummary.length > 5 ? `  (+${errorSummary.length - 5} more)` : ''}
+            {errorSummary.length > 0 ? (
+              <>
+                <strong>{errorSummary.length} error{errorSummary.length !== 1 ? 's' : ''}</strong>
+                {': '}
+                {errorSummary.slice(0, 5).join('  |  ')}
+                {errorSummary.length > 5 ? `  (+${errorSummary.length - 5} more)` : ''}
+                {warningCount > 0 && (
+                  <span className="warning-count-muted">
+                    {'  ·  '}{warningCount} warning{warningCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </>
+            ) : (
+              <strong>{warningCount} warning{warningCount !== 1 ? 's' : ''}</strong>
+            )}
           </span>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            style={{ marginLeft: 'auto', flexShrink: 0 }}
-            onClick={jumpToFirstError}
-          >
-            {errorSummary.length === 1 ? 'Jump to error ↓' : 'Jump to first ↓'}
-          </button>
+          {errorSummary.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              style={{ marginLeft: 'auto', flexShrink: 0 }}
+              onClick={jumpToFirstError}
+            >
+              {errorSummary.length === 1 ? 'Jump to error ↓' : 'Jump to first ↓'}
+            </button>
+          )}
         </div>
       )}
 
@@ -1280,6 +1556,7 @@ export function EditStep({
                   group={group}
                   columns={columns}
                   pointErrors={pointErrors}
+                  warnRow={warnRow}
                   globalRowOffset={rowOffsets[gi]}
                   searchActive={searchActive}
                   pointMatches={pointMatches}
@@ -1392,6 +1669,17 @@ export function EditStep({
             />
           )}
 
+          {/* Find & replace modal */}
+          {findReplaceOpen && (
+            <FindReplaceModal
+              columns={findReplaceColumns}
+              groups={groups}
+              selectedIds={selectedIds}
+              onApply={applyFindReplace}
+              onCancel={() => setFindReplaceOpen(false)}
+            />
+          )}
+
           {/* Drag overlay */}
           <DragOverlay>
             {activeType === 'group' && activeGroup && (
@@ -1400,6 +1688,7 @@ export function EditStep({
                   group={activeGroup}
                   columns={columns}
                   pointErrors={pointErrors}
+                  warnRow={warnRow}
                   globalRowOffset={0}
                   searchActive={false}
                   pointMatches={pointMatches}
@@ -1422,6 +1711,7 @@ export function EditStep({
                     columns={columns}
                     rowNum={0}
                     errors={pointErrors?.[activePoint.id]}
+                    warnRow={warnRow}
                     onUpdate={() => { }}
                     onCommit={() => { }}
                     onDelete={() => { }}

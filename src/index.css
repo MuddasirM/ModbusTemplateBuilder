@@ -485,6 +485,10 @@ a:hover { color: var(--c-accent-hover); }
   background: var(--c-danger-subtle);
 }
 
+.register-table td.cell-warning {
+  background: var(--c-warning-subtle);
+}
+
 /* Ghost cell inputs */
 .register-table .field-input,
 .register-table .field-select {
@@ -512,6 +516,11 @@ a:hover { color: var(--c-accent-hover); }
 .register-table td.cell-invalid .field-input,
 .register-table td.cell-invalid .field-select {
   border-color: var(--c-danger);
+}
+
+.register-table td.cell-warning .field-input,
+.register-table td.cell-warning .field-select {
+  border-color: var(--c-warning);
 }
 
 .table-scroll {
@@ -1641,6 +1650,22 @@ pre.xml-preview {
   flex-shrink: 0;
 }
 
+/* ── Find & replace modal ────────────────────────────────── */
+.find-replace-checkbox {
+  margin: 0 -8px;
+}
+
+.find-replace-preview {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--c-ink-dim);
+}
+
+.field-error-msg {
+  font-size: 0.6875rem;
+  color: var(--c-danger);
+}
+
 /* ── Group point count ───────────────────────────────────── */
 .group-point-count {
   font-size: 0.75rem;
@@ -1658,6 +1683,11 @@ pre.xml-preview {
   align-items: center;
   gap: 8px;
   margin-bottom: 0;
+}
+
+.error-summary-bar .warning-count-muted {
+  color: var(--c-ink-dim);
+  font-weight: 400;
 }
 
 /* ── Reduced motion ──────────────────────────────────────── */

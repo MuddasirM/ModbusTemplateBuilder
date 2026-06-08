@@ -6,7 +6,8 @@ import { ARGOS_FIELDS, COL_ALIASES, FIELD_BY_KEY } from './fields';
 import { buildXml } from './buildXml';
 import { parseArgosXml } from './parseXml';
 import { validateRow } from './validate';
-import type { BulkEditField, ColumnDef, MetadataFieldDef, VariantBundle } from '../types';
+import { warnRow } from './warnings';
+import type { BulkEditField, ColumnDef, FindReplaceFieldDef, MetadataFieldDef, VariantBundle } from '../types';
 
 const ARGOS_METADATA: MetadataFieldDef[] = [
   { key: 'name', label: 'Template Name', inputType: 'string', default: 'Modbus Template' },
@@ -51,6 +52,21 @@ const ARGOS_BULK_EDIT_SCHEMA: BulkEditField[] = [
   { key: 'group_name',    label: 'Group',         type: 'dropdown', options: [] },
 ];
 
+// Candidate columns for the Edit step's Find & Replace, and their match
+// semantics. Address, Register Type and Data Format are excluded: address
+// edits are too dangerous for bulk substring replacement, and the others are
+// choice fields with no substring meaning. EditStep narrows this further to
+// fields it actually has (e.g. a future Kepware bundle with no decimals/min/max).
+const ARGOS_FIND_REPLACE_FIELDS: FindReplaceFieldDef[] = [
+  { key: 'point_name', numeric: false },
+  { key: 'unit', numeric: false },
+  { key: 'group_name', numeric: false },
+  { key: 'scaling', numeric: true },
+  { key: 'decimals', numeric: true },
+  { key: 'min_val', numeric: true },
+  { key: 'max_val', numeric: true },
+];
+
 export const argosVariant: VariantBundle = {
   id: 'argos',
   label: 'Argos',
@@ -60,7 +76,9 @@ export const argosVariant: VariantBundle = {
   metadata: ARGOS_METADATA,
   spreadsheetColumns: ARGOS_EXCEL_COLS,
   bulkEditSchema: ARGOS_BULK_EDIT_SCHEMA,
+  findReplaceFields: ARGOS_FIND_REPLACE_FIELDS,
   validateRow,
+  warnRow,
   serialize: (groups, meta) =>
     buildXml(groups, String(meta.name ?? ''), String(meta.version ?? '')),
   parse: (text) => {
