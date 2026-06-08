@@ -4,6 +4,7 @@
 // which guarantees byte-for-byte parity with the Python output.
 
 import { xmlEscape } from './format';
+import { encodeField } from './urlEncoding';
 import type { Group } from '../../row';
 
 const I = '   '; // 3-space indent, matching minidom toprettyxml(indent="   ")
@@ -47,8 +48,8 @@ export function buildXml(
       const pname = g(r, 'point_name').trim();
       if (!pname) continue;
 
-      const pointAttrs: Attr[] = [['id', '0'], ['name', pname]];
-      const unit = g(r, 'unit').trim().replaceAll('%', '%25');
+      const pointAttrs: Attr[] = [['id', '0'], ['name', encodeField(pname)]];
+      const unit = encodeField(g(r, 'unit').trim());
       if (unit) pointAttrs.push(['unit', unit]);
 
       const addrAttrs: Attr[] = [

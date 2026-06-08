@@ -2,6 +2,7 @@
 // browser DOMParser. Namespace-tolerant via Element.localName. id/uid are
 // ignored (reset on re-export).
 
+import { decodeField } from './urlEncoding';
 import type { Group, Row } from '../../row';
 
 export interface ParsedXml {
@@ -42,10 +43,10 @@ export function parseArgosXml(xmlText: string): ParsedXml {
       const addr = findChild(child, 'Address');
       const calc = findChild(child, 'Calculate');
       const typeEl = findChild(child, 'Type');
-      const unit = (child.getAttribute('unit') || '').replaceAll('%25', '%');
+      const unit = decodeField(child.getAttribute('unit') || '');
 
       points.push({
-        point_name:     child.getAttribute('name') || '',
+        point_name:     decodeField(child.getAttribute('name') || ''),
         point_type:     (typeEl?.textContent || '').trim() || 'ShowValue',
         register_index: addr ? addr.getAttribute('index') || '' : '',
         group_name:     groupName,
