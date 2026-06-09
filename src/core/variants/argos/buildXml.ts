@@ -17,6 +17,31 @@ function attrs(pairs: Attr[]): string {
 
 const g = (r: Record<string, string>, k: string): string => (r[k] ?? '') as string;
 
+function buildEnumBlock(enumStr: string): string[] {
+  const lines: string[] = [];
+  const parts = enumStr.split(';');
+  const items: string[] = [];
+  for (const part of parts) {
+    const eqIdx = part.indexOf('=');
+    if (eqIdx === -1) continue;
+    const id = part.slice(0, eqIdx).trim();
+    if (!id) continue;
+    let label = part.slice(eqIdx + 1).trim();
+    if (label.startsWith('"') && label.endsWith('"') && label.length >= 2) {
+      label = label.slice(1, -1);
+    }
+    items.push(`${I}${I}${I}${I}<Item${attrs([['id', id], ['label', label]])}/>`);
+  }
+  if (items.length === 0) {
+    lines.push(`${I}${I}${I}<Enum/>`);
+  } else {
+    lines.push(`${I}${I}${I}<Enum>`);
+    for (const item of items) lines.push(item);
+    lines.push(`${I}${I}${I}</Enum>`);
+  }
+  return lines;
+}
+
 export function buildXml(
   groups: Group[],
   templateName: string,
@@ -58,6 +83,10 @@ export function buildXml(
       ];
       const idx = g(r, 'register_index').trim();
       if (idx) addrAttrs.push(['index', idx]);
+      const rc = g(r, 'reg_count').trim();
+      if (rc) addrAttrs.push(['length', rc]);
+      const bm = g(r, 'bitmask').trim();
+      if (bm) addrAttrs.push(['bitmask', bm]);
 
       const calcAttrs: Attr[] = [['decimals', g(r, 'decimals') || '2']];
       const s = g(r, 'scaling') || '1';
@@ -73,7 +102,8 @@ export function buildXml(
       lines.push(`${I}${I}${I}<Type>${ptype}</Type>`);
       lines.push(`${I}${I}${I}<Address${attrs(addrAttrs)}/>`);
       lines.push(`${I}${I}${I}<Calculate${attrs(calcAttrs)}/>`);
-      lines.push(`${I}${I}${I}<Enum/>`);
+      const enumStr = g(r, 'enumeration').trim();
+      for (const line of buildEnumBlock(enumStr)) lines.push(line);
       lines.push(`${I}${I}</Point>`);
     }
     lines.push(`${I}</Group>`);

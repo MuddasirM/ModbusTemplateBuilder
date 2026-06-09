@@ -60,6 +60,14 @@ function moveToMatchingGroups(groupsIn: GroupState[], pointIds: string[]): Group
   return next;
 }
 
+interface IssueItem {
+  pointId: string;
+  pointName: string;
+  fieldKey: string;
+  fieldLabel: string;
+  message: string;
+}
+
 interface Props {
   source: Source;
   fields: FieldDef[];
@@ -461,6 +469,7 @@ interface PointRowProps {
   onDuplicate: () => void;
   multiSelectMode?: boolean;
   selected?: boolean;
+  highlighted?: boolean;
   onSelectPointerDown?: (e: React.PointerEvent) => void;
   onSelectKeyDown?: (e: React.KeyboardEvent) => void;
   overlay?: boolean;
@@ -479,6 +488,7 @@ const PointRow = memo(function PointRow({
   onDuplicate,
   multiSelectMode = false,
   selected = false,
+  highlighted = false,
   onSelectPointerDown,
   onSelectKeyDown,
   overlay = false,
@@ -492,10 +502,13 @@ const PointRow = memo(function PointRow({
     opacity: isDragging && !overlay ? 0.3 : 1,
   };
 
+  const hasErrors = !!(errors && Object.keys(errors).length > 0);
   const rowClasses = [
     isDragging && !overlay ? 'row-dragging' : '',
     multiSelectMode ? 'row-select-mode' : '',
     selected ? 'row-selected' : '',
+    hasErrors ? 'row-has-errors' : '',
+    highlighted ? 'row-jump-highlight' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -535,7 +548,7 @@ const PointRow = memo(function PointRow({
               : [point.data[f.key], ...f.choices]
             : null;
         return (
-          <td key={f.key} className={cellClass} title={cellTitle}>
+          <td key={f.key} className={cellClass} title={cellTitle} data-field={f.key}>
             {choiceOpts ? (
               <select
                 className="field-select"
@@ -577,9 +590,11 @@ const PointRow = memo(function PointRow({
   prev.point === next.point &&
   prev.rowNum === next.rowNum &&
   prev.errors === next.errors &&
+  prev.warnRow === next.warnRow &&
   prev.columns === next.columns &&
   prev.multiSelectMode === next.multiSelectMode &&
   prev.selected === next.selected &&
+  prev.highlighted === next.highlighted &&
   prev.overlay === next.overlay,
 );
 
@@ -612,6 +627,7 @@ interface GroupSectionProps {
   columns: FieldDef[];
   pointErrors: PointErrors | null;
   warnRow?: (row: Row) => Record<string, string>;
+  highlightedPointId?: string | null;
   globalRowOffset: number;
   searchActive: boolean;
   pointMatches: (p: PointState) => boolean;
@@ -634,6 +650,7 @@ function GroupSection({
   columns,
   pointErrors,
   warnRow,
+  highlightedPointId,
   globalRowOffset,
   searchActive,
   pointMatches,
@@ -733,6 +750,7 @@ function GroupSection({
             rowNum={globalRowOffset + group.points.indexOf(point) + 1}
             errors={pointErrors?.[point.id]}
             warnRow={warnRow}
+            highlighted={highlightedPointId === point.id}
             onUpdate={(key, val) => onUpdatePoint(point.id, key, val)}
             onCommit={(key) => onCommitPoint(point.id, key)}
             onDelete={() => onDeletePoint(point.id)}
@@ -805,6 +823,20 @@ export function EditStep({
 
   // Row search
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Issues panel collapse state
+  const [errorsExpanded, setErrorsExpanded] = useState(false);
+  const [warningsExpanded, setWarningsExpanded] = useState(false);
+
+  // Row highlight: set when user clicks an issue item, cleared after animation
+  const [highlightedPointId, setHighlightedPointId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    };
+  }, []);
 
   // ── Multi-select mode ─────────────────────────────────────────────────────
   const [multiSelectMode, setMultiSelectMode] = useState(false);
@@ -994,14 +1026,20 @@ export function EditStep({
     setConfirmClearField({ key, label, count });
   }
 
-  // ── Scroll to first error ─────────────────────────────────────────────────
-  function jumpToFirstError() {
-    const el = document.querySelector(
-      '.cell-invalid input, .cell-invalid select',
+  // ── Navigate to a specific cell (used by the issues panel) ──────────────
+  function jumpToCell(pointId: string, fieldKey: string) {
+    const row = document.querySelector(`[data-point-id="${pointId}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const el = row.querySelector(
+      `[data-field="${fieldKey}"] input, [data-field="${fieldKey}"] select`,
     ) as HTMLElement | null;
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.focus({ preventScroll: true });
+    el?.focus({ preventScroll: true });
+
+    // Highlight the row for 1.8 s, cancelling any in-flight highlight first.
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    setHighlightedPointId(pointId);
+    highlightTimerRef.current = setTimeout(() => setHighlightedPointId(null), 1800);
   }
 
   // ── Drag handlers ─────────────────────────────────────────────────────────
@@ -1113,28 +1151,40 @@ export function EditStep({
     }
   }
 
-  // ── Error summary ─────────────────────────────────────────────────────────
-  const errorSummary: string[] = [];
+  // ── Issue items (errors and warnings with per-field detail) ──────────────
+  const errorItems: IssueItem[] = [];
   if (pointErrors) {
     groups.forEach((g) => {
       g.points.forEach((p) => {
         const errs = pointErrors[p.id];
         if (!errs) return;
-        for (const key of Object.keys(errs)) {
-          errorSummary.push(`${p.data.point_name || '(unnamed)'} › ${fieldByKey[key]?.label ?? key}: ${errs[key]}`);
+        for (const [key, msg] of Object.entries(errs)) {
+          errorItems.push({
+            pointId: p.id,
+            pointName: String(p.data.point_name || '(unnamed)'),
+            fieldKey: key,
+            fieldLabel: fieldByKey[key]?.label ?? key,
+            message: msg,
+          });
         }
       });
     });
   }
 
-  // Variant warnings: non-blocking, counted separately from hard errors.
-  // Counts points (matching how errorSummary counts points with errors, not
-  // individual field-level messages).
-  let warningCount = 0;
+  const warnItems: IssueItem[] = [];
   if (warnRow) {
     groups.forEach((g) => {
       g.points.forEach((p) => {
-        if (Object.keys(warnRow(p.data)).length > 0) warningCount++;
+        const warns = warnRow(p.data);
+        for (const [key, msg] of Object.entries(warns)) {
+          warnItems.push({
+            pointId: p.id,
+            pointName: String(p.data.point_name || '(unnamed)'),
+            fieldKey: key,
+            fieldLabel: fieldByKey[key]?.label ?? key,
+            message: msg,
+          });
+        }
       });
     });
   }
@@ -1335,8 +1385,8 @@ export function EditStep({
   const generateDisabledReason =
     totalPoints === 0
       ? 'No rows to export'
-      : errorSummary.length > 0
-        ? `${errorSummary.length} cell${errorSummary.length !== 1 ? 's' : ''} have errors; fix them to export`
+      : errorItems.length > 0
+        ? `${errorItems.length} cell${errorItems.length !== 1 ? 's' : ''} have errors; fix them to export`
         : null;
 
   // Active overlay data
@@ -1474,38 +1524,74 @@ export function EditStep({
         </div>
       )}
 
-      {/* Error / warning summary */}
-      {(errorSummary.length > 0 || warningCount > 0) && (
-        <div
-          className={`alert ${errorSummary.length > 0 ? 'alert-danger' : 'alert-warning'} error-summary-bar`}
-          style={{ flexShrink: 0 }}
-        >
-          <span>
-            {errorSummary.length > 0 ? (
-              <>
-                <strong>{errorSummary.length} error{errorSummary.length !== 1 ? 's' : ''}</strong>
-                {': '}
-                {errorSummary.slice(0, 5).join('  |  ')}
-                {errorSummary.length > 5 ? `  (+${errorSummary.length - 5} more)` : ''}
-                {warningCount > 0 && (
-                  <span className="warning-count-muted">
-                    {'  ·  '}{warningCount} warning{warningCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </>
-            ) : (
-              <strong>{warningCount} warning{warningCount !== 1 ? 's' : ''}</strong>
-            )}
-          </span>
-          {errorSummary.length > 0 && (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              style={{ marginLeft: 'auto', flexShrink: 0 }}
-              onClick={jumpToFirstError}
-            >
-              {errorSummary.length === 1 ? 'Jump to error ↓' : 'Jump to first ↓'}
-            </button>
+      {/* Issues panel: collapsible error and warning cards */}
+      {(errorItems.length > 0 || warnItems.length > 0) && (
+        <div className="issues-panel">
+          {errorItems.length > 0 && (
+            <div className="issues-section">
+              <button
+                type="button"
+                className="issues-header issues-header-error"
+                aria-expanded={errorsExpanded}
+                onClick={() => setErrorsExpanded((x) => !x)}
+              >
+                <strong className="issues-count">
+                  {errorItems.length} error{errorItems.length !== 1 ? 's' : ''}
+                </strong>
+                <span className="issues-toggle" aria-hidden="true">{errorsExpanded ? '▲' : '▼'}</span>
+              </button>
+              {errorsExpanded && (
+                <ul className="issues-list">
+                  {errorItems.map((item) => (
+                    <li key={`${item.pointId}:${item.fieldKey}`}>
+                      <button
+                        type="button"
+                        className="issues-item issues-item-error"
+                        onClick={() => jumpToCell(item.pointId, item.fieldKey)}
+                      >
+                        <span className="issues-item-name">{item.pointName}</span>
+                        <span className="issues-item-sep">›</span>
+                        <span className="issues-item-field">{item.fieldLabel}</span>
+                        <span className="issues-item-msg">{item.message}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {warnItems.length > 0 && (
+            <div className="issues-section">
+              <button
+                type="button"
+                className="issues-header issues-header-warning"
+                aria-expanded={warningsExpanded}
+                onClick={() => setWarningsExpanded((x) => !x)}
+              >
+                <strong className="issues-count">
+                  {warnItems.length} warning{warnItems.length !== 1 ? 's' : ''}
+                </strong>
+                <span className="issues-toggle" aria-hidden="true">{warningsExpanded ? '▲' : '▼'}</span>
+              </button>
+              {warningsExpanded && (
+                <ul className="issues-list">
+                  {warnItems.map((item) => (
+                    <li key={`${item.pointId}:${item.fieldKey}`}>
+                      <button
+                        type="button"
+                        className="issues-item issues-item-warning"
+                        onClick={() => jumpToCell(item.pointId, item.fieldKey)}
+                      >
+                        <span className="issues-item-name">{item.pointName}</span>
+                        <span className="issues-item-sep">›</span>
+                        <span className="issues-item-field">{item.fieldLabel}</span>
+                        <span className="issues-item-msg">{item.message}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -1526,10 +1612,13 @@ export function EditStep({
                 <th style={{ width: 28 }} />
                 <th style={{ width: 36 }}>#</th>
                 {columns.map((f) => (
-                  <th key={f.key} style={{ width: colWidths[f.key] ?? 90, position: 'relative' }}>
+                  <th key={f.key} style={{ width: colWidths[f.key] ?? 90 }} title={f.hint}>
                     {f.label}
                     {f.required && (
                       <span style={{ color: 'var(--c-danger)', marginLeft: 2 }}>*</span>
+                    )}
+                    {f.hint && (
+                      <span className="col-hint" title={f.hint}> ⓘ</span>
                     )}
                     <button
                       type="button"
@@ -1557,6 +1646,7 @@ export function EditStep({
                   columns={columns}
                   pointErrors={pointErrors}
                   warnRow={warnRow}
+                  highlightedPointId={highlightedPointId}
                   globalRowOffset={rowOffsets[gi]}
                   searchActive={searchActive}
                   pointMatches={pointMatches}

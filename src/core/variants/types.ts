@@ -15,6 +15,8 @@ export interface FieldDef {
   choices: string[] | null;
   default: string;
   width: number;
+  /** Optional tooltip shown in the column header (e.g. for display-only fields). */
+  hint?: string;
 }
 
 /** A template-level metadata field (e.g. template name/version), rendered

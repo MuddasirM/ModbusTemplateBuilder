@@ -28,6 +28,10 @@ const ARGOS_EXCEL_COLS: ColumnDef[] = [
   { key: 'group_name',     header: 'Group' },
   { key: 'min_val',        header: 'Min' },
   { key: 'max_val',        header: 'Max' },
+  { key: 'enumeration',    header: 'Enumeration' },
+  { key: 'reg_count',      header: 'Reg. Count' },
+  { key: 'bitmask',        header: 'Bitmask' },
+  { key: 'notes',          header: 'Notes' },
 ];
 
 // Choice-field dropdown options for the bulk-edit modal, drawn from the same

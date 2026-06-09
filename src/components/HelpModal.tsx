@@ -12,17 +12,21 @@ interface FieldInfo {
 }
 
 const FIELD_INFO: FieldInfo[] = [
-  { label: 'No.',         req: false, note: 'Optional row counter, added automatically on Excel export', aliases: [] },
-  { label: 'Name',        req: true, aliases: ['Point Name', 'Description', 'Tag Name', 'Signal Name'] },
-  { label: 'Address(0x)',           aliases: ['Address', 'Addr', 'Register', 'Register Index', 'Register Address', 'Modbus Address', 'Modbus Register'] },
-  { label: 'Attribute',             aliases: ['Attr', 'Register Type', 'Reg. Type', 'Function Code'] },
-  { label: 'Data Format',           aliases: ['Data Type', 'Dtype', 'Format', 'Type', 'Word Format', 'Value Type'] },
-  { label: 'Coefficient',           aliases: ['Coeff', 'Scaling', 'Scaling Factor', 'Factor', 'Multiplier', 'Gain'] },
-  { label: 'Unit',                  aliases: ['Units', 'Engineering Unit', 'EU'] },
-  { label: 'Decimals',              aliases: ['Decimal', 'Decimal Places', 'Decimal Points', 'Precision'] },
-  { label: 'Group',                 aliases: ['Group Name', 'Category', 'Section'] },
-  { label: 'Min',                   aliases: ['Min Value', 'Minimum', 'Min Val', 'Low Limit', 'Low Range'] },
-  { label: 'Max',                   aliases: ['Max Value', 'Maximum', 'Max Val', 'High Limit', 'High Range'] },
+  { label: 'Point Name',  req: true,  aliases: ['Name', 'Description', 'Tag Name', 'Signal Name', 'Tag', 'Label', 'Signal', 'Parameter'] },
+  { label: 'Point Type',              aliases: ['Presentation', 'Tag Type', 'Display Type'] },
+  { label: 'Reg. Address', req: true, aliases: ['Address(0x)', 'Address', 'Addr', 'Register', 'Register Index', 'Register Address', 'Modbus Address', 'Modbus Register', 'Offset'] },
+  { label: 'Group',                   aliases: ['Group Name', 'Category', 'Section', 'Device', 'Subsystem'] },
+  { label: 'Reg. Type',               aliases: ['Attribute', 'Attr', 'Register Type', 'Function Code', 'Modbus Function', 'Access Type'] },
+  { label: 'Data Format',             aliases: ['Data Type', 'Dtype', 'Format', 'Type', 'Word Format', 'Value Type', 'Value Format'] },
+  { label: 'Unit',                    aliases: ['Units', 'Engineering Unit', 'EU', 'UOM', 'Unit of Measure'] },
+  { label: 'Scaling',                 aliases: ['Coefficient', 'Coeff', 'Scaling Factor', 'Scale', 'Factor', 'Multiplier', 'Gain'] },
+  { label: 'Decimals',                aliases: ['Decimal', 'Decimal Places', 'Decimal Points', 'Precision', 'DP'] },
+  { label: 'Min',                     aliases: ['Min Value', 'Minimum', 'Min Val', 'Low Limit', 'Low Range', 'Lower Range', 'Lower Bound'] },
+  { label: 'Max',                     aliases: ['Max Value', 'Maximum', 'Max Val', 'High Limit', 'High Range', 'Upper Range', 'Upper Bound'] },
+  { label: 'Enumeration',             aliases: ['Enum', 'Enum Values', 'Enum List', 'State Map', 'States', 'Value Map', 'Choices'] },
+  { label: 'Reg. Count',              aliases: ['Reg Count', 'Register Length', 'String Length', 'Num Registers', 'Word Count', 'Length'] },
+  { label: 'Bitmask',                 aliases: ['Mask', 'Bit Field', 'Bitmask Value', 'Bitmask Filter'] },
+  { label: 'Notes', note: 'Display only. Not included in the exported XML.', aliases: ['Note', 'Comment', 'Comments', 'Remark', 'Remarks', 'Memo', 'Info'] },
 ];
 
 export function HelpModal({ onClose }: Props) {
@@ -98,7 +102,7 @@ export function HelpModal({ onClose }: Props) {
             <p>
               Fields marked <span className="help-req">required</span> must be mapped before you can continue.
               For unmapped fields, the <em>Default value</em> column fills every row; use the preset
-              dropdown for choice fields (Reg. Type, Data Format).
+              dropdown for choice fields (Point Type, Reg. Type, Data Format).
             </p>
           </section>
 
@@ -151,17 +155,20 @@ export function HelpModal({ onClose }: Props) {
             </div>
             {activeField && (
               <div className="help-aliases">
-                {activeField.note ? (
-                  <span className="help-alias-note">{activeField.note}</span>
-                ) : activeField.aliases.length > 0 ? (
+                {activeField.aliases.length > 0 ? (
                   <>
                     <span className="help-alias-label">also:</span>
                     {activeField.aliases.map(a => (
                       <span key={a} className="help-alias">{a}</span>
                     ))}
                   </>
-                ) : (
+                ) : !activeField.note ? (
                   <span className="help-alias-note">no other names recognised</span>
+                ) : null}
+                {activeField.note && (
+                  <span className={`help-alias-note${activeField.aliases.length > 0 ? ' help-alias-note-below' : ''}`}>
+                    {activeField.note}
+                  </span>
                 )}
               </div>
             )}

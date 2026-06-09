@@ -43,7 +43,20 @@ export function parseArgosXml(xmlText: string): ParsedXml {
       const addr = findChild(child, 'Address');
       const calc = findChild(child, 'Calculate');
       const typeEl = findChild(child, 'Type');
+      const enumEl = findChild(child, 'Enum');
       const unit = decodeField(child.getAttribute('unit') || '');
+
+      let enumeration = '';
+      if (enumEl) {
+        const parts: string[] = [];
+        for (const item of Array.from(enumEl.children)) {
+          if (item.localName !== 'Item') continue;
+          const id = item.getAttribute('id') || '';
+          const label = item.getAttribute('label') || '';
+          parts.push(`${id}=${label}`);
+        }
+        enumeration = parts.join(';');
+      }
 
       points.push({
         point_name:     decodeField(child.getAttribute('name') || ''),
@@ -57,6 +70,10 @@ export function parseArgosXml(xmlText: string): ParsedXml {
         decimals:       (calc ? calc.getAttribute('decimals') || '' : '') || '2',
         min_val:        calc ? calc.getAttribute('min') || '' : '',
         max_val:        calc ? calc.getAttribute('max') || '' : '',
+        enumeration,
+        reg_count:      addr ? addr.getAttribute('length') || '' : '',
+        bitmask:        addr ? addr.getAttribute('bitmask') || '' : '',
+        notes:          '',
       });
     }
 

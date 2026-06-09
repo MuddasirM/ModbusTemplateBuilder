@@ -341,14 +341,142 @@
       "max_val": ""
     },
     "rows": [
-      { "point_name": "Grid Frequency", "point_type": "ShowValue", "register_index": "1000", "register_type": "Holding", "data_format": "Float", "unit": "Hz",   "scaling": "1.0",    "decimals": "2", "group_name": "Grid",   "min_val": "45",  "max_val": "55"  },
-      { "point_name": "Grid Voltage L1", "point_type": "ShowValue", "register_index": "1002", "register_type": "Holding", "data_format": "U32",   "unit": "V",    "scaling": "10.0",   "decimals": "1", "group_name": "Grid",   "min_val": "0",   "max_val": "500" },
-      { "point_name": "Grid Current L1", "point_type": "ShowValue", "register_index": "1004", "register_type": "Holding", "data_format": "U32",   "unit": "A",    "scaling": "100.0",  "decimals": "2", "group_name": "Grid",   "min_val": "0",   "max_val": "100" },
-      { "point_name": "Active Power", "point_type": "ShowValue", "register_index": "1010", "register_type": "Holding", "data_format": "S32",   "unit": "kW",   "scaling": "1000.0", "decimals": "1", "group_name": "Power",  "min_val": "-50", "max_val": "50"  },
-      { "point_name": "Reactive Power", "point_type": "ShowValue", "register_index": "1012", "register_type": "Holding", "data_format": "S32",   "unit": "kVAr", "scaling": "1000.0", "decimals": "1", "group_name": "Power",  "min_val": "-50", "max_val": "50"  },
-      { "point_name": "Energy Total", "point_type": "ShowValue", "register_index": "1020", "register_type": "Holding", "data_format": "U64",   "unit": "kWh",  "scaling": "1.0",    "decimals": "0", "group_name": "Energy", "min_val": "0",   "max_val": ""    },
-      { "point_name": "Inverter Temp", "point_type": "ShowValue", "register_index": "1030", "register_type": "Input",   "data_format": "S16",   "unit": "degC", "scaling": "10.0",   "decimals": "1", "group_name": "Status", "min_val": "-40", "max_val": "120" },
-      { "point_name": "Operating State", "point_type": "ShowValue", "register_index": "1031", "register_type": "Input",   "data_format": "U16",   "unit": "",     "scaling": "1.0",    "decimals": "0", "group_name": "Status", "min_val": "",    "max_val": ""    }
+      {
+        "point_name": "Grid Frequency",
+        "point_type": "ShowValue",
+        "register_index": "1000",
+        "register_type": "Holding",
+        "data_format": "Float",
+        "unit": "Hz",
+        "scaling": "1.0",
+        "decimals": "2",
+        "group_name": "Grid",
+        "min_val": "45",
+        "max_val": "55",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Grid Voltage L1",
+        "point_type": "ShowValue",
+        "register_index": "1002",
+        "register_type": "Holding",
+        "data_format": "U32",
+        "unit": "V",
+        "scaling": "10.0",
+        "decimals": "1",
+        "group_name": "Grid",
+        "min_val": "0",
+        "max_val": "500",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Grid Current L1",
+        "point_type": "ShowValue",
+        "register_index": "1004",
+        "register_type": "Holding",
+        "data_format": "U32",
+        "unit": "A",
+        "scaling": "100.0",
+        "decimals": "2",
+        "group_name": "Grid",
+        "min_val": "0",
+        "max_val": "100",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Active Power",
+        "point_type": "ShowValue",
+        "register_index": "1010",
+        "register_type": "Holding",
+        "data_format": "S32",
+        "unit": "kW",
+        "scaling": "1000.0",
+        "decimals": "1",
+        "group_name": "Power",
+        "min_val": "-50",
+        "max_val": "50",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Reactive Power",
+        "point_type": "ShowValue",
+        "register_index": "1012",
+        "register_type": "Holding",
+        "data_format": "S32",
+        "unit": "kVAr",
+        "scaling": "1000.0",
+        "decimals": "1",
+        "group_name": "Power",
+        "min_val": "-50",
+        "max_val": "50",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Energy Total",
+        "point_type": "ShowValue",
+        "register_index": "1020",
+        "register_type": "Holding",
+        "data_format": "U64",
+        "unit": "kWh",
+        "scaling": "1.0",
+        "decimals": "0",
+        "group_name": "Energy",
+        "min_val": "0",
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Inverter Temp",
+        "point_type": "ShowValue",
+        "register_index": "1030",
+        "register_type": "Input",
+        "data_format": "S16",
+        "unit": "degC",
+        "scaling": "10.0",
+        "decimals": "1",
+        "group_name": "Status",
+        "min_val": "-40",
+        "max_val": "120",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      },
+      {
+        "point_name": "Operating State",
+        "point_type": "ShowValue",
+        "register_index": "1031",
+        "register_type": "Input",
+        "data_format": "U16",
+        "unit": "",
+        "scaling": "1.0",
+        "decimals": "0",
+        "group_name": "Status",
+        "min_val": "",
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
+      }
     ],
     "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<ControllerTemplate encoding=\"UTF-8\" name=\"ANPL-AME Template\" uid=\"0\" version=\"1.0\">\n   <Group id=\"0\" name=\"Grid\" uid=\"0\">\n      <Point id=\"0\" name=\"Grid Frequency\" unit=\"Hz\">\n         <Type>ShowValue</Type>\n         <Address format=\"Float\" type=\"Holding\" index=\"1000\"/>\n         <Calculate decimals=\"2\" scaling=\"1.0\" min=\"45\" max=\"55\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Grid Voltage L1\" unit=\"V\">\n         <Type>ShowValue</Type>\n         <Address format=\"U32\" type=\"Holding\" index=\"1002\"/>\n         <Calculate decimals=\"1\" scaling=\"10.0\" min=\"0\" max=\"500\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Grid Current L1\" unit=\"A\">\n         <Type>ShowValue</Type>\n         <Address format=\"U32\" type=\"Holding\" index=\"1004\"/>\n         <Calculate decimals=\"2\" scaling=\"100.0\" min=\"0\" max=\"100\"/>\n         <Enum/>\n      </Point>\n   </Group>\n   <Group id=\"0\" name=\"Power\" uid=\"0\">\n      <Point id=\"0\" name=\"Active Power\" unit=\"kW\">\n         <Type>ShowValue</Type>\n         <Address format=\"S32\" type=\"Holding\" index=\"1010\"/>\n         <Calculate decimals=\"1\" scaling=\"1000.0\" min=\"-50\" max=\"50\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Reactive Power\" unit=\"kVAr\">\n         <Type>ShowValue</Type>\n         <Address format=\"S32\" type=\"Holding\" index=\"1012\"/>\n         <Calculate decimals=\"1\" scaling=\"1000.0\" min=\"-50\" max=\"50\"/>\n         <Enum/>\n      </Point>\n   </Group>\n   <Group id=\"0\" name=\"Energy\" uid=\"0\">\n      <Point id=\"0\" name=\"Energy Total\" unit=\"kWh\">\n         <Type>ShowValue</Type>\n         <Address format=\"U64\" type=\"Holding\" index=\"1020\"/>\n         <Calculate decimals=\"0\" scaling=\"1.0\" min=\"0\"/>\n         <Enum/>\n      </Point>\n   </Group>\n   <Group id=\"0\" name=\"Status\" uid=\"0\">\n      <Point id=\"0\" name=\"Inverter Temp\" unit=\"degC\">\n         <Type>ShowValue</Type>\n         <Address format=\"S16\" type=\"Input\" index=\"1030\"/>\n         <Calculate decimals=\"1\" scaling=\"10.0\" min=\"-40\" max=\"120\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Operating State\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Input\" index=\"1031\"/>\n         <Calculate decimals=\"0\" scaling=\"1.0\"/>\n         <Enum/>\n      </Point>\n   </Group>\n</ControllerTemplate>\n"
   },
@@ -442,7 +570,11 @@
         "scaling": "10",
         "decimals": "1",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Current",
@@ -455,7 +587,11 @@
         "scaling": "1000",
         "decimals": "3",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Power",
@@ -468,7 +604,11 @@
         "scaling": "0.5",
         "decimals": "0",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Ratio",
@@ -481,7 +621,11 @@
         "scaling": "3",
         "decimals": "0",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       }
     ],
     "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<ControllerTemplate encoding=\"UTF-8\" name=\"ANPL-AME Template\" uid=\"0\" version=\"1.0\">\n   <Group id=\"0\" name=\"Default Group\" uid=\"0\">\n      <Point id=\"0\" name=\"Voltage\" unit=\"V\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1000\"/>\n         <Calculate decimals=\"1\" scaling=\"10\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Current\" unit=\"A\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1002\"/>\n         <Calculate decimals=\"3\" scaling=\"1000\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Power\" unit=\"kW\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1008\"/>\n         <Calculate decimals=\"0\" scaling=\"0.5\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Ratio\" unit=\"%25\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1012\"/>\n         <Calculate decimals=\"0\" scaling=\"3\"/>\n         <Enum/>\n      </Point>\n   </Group>\n</ControllerTemplate>\n"
@@ -584,7 +728,11 @@
         "scaling": "100",
         "decimals": "2",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Grid Voltage L1",
@@ -597,7 +745,11 @@
         "scaling": "10",
         "decimals": "1",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Grid Current L1",
@@ -610,7 +762,11 @@
         "scaling": "1000",
         "decimals": "3",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Active Power",
@@ -623,7 +779,11 @@
         "scaling": "1",
         "decimals": "0",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Power Factor",
@@ -636,7 +796,11 @@
         "scaling": "1000",
         "decimals": "3",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Energy Total",
@@ -649,7 +813,11 @@
         "scaling": "1",
         "decimals": "0",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       }
     ],
     "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<ControllerTemplate encoding=\"UTF-8\" name=\"ANPL-AME Template\" uid=\"0\" version=\"1.0\">\n   <Group id=\"0\" name=\"Default Group\" uid=\"0\">\n      <Point id=\"0\" name=\"Grid Frequency\" unit=\"Hz\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1000\"/>\n         <Calculate decimals=\"2\" scaling=\"100\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Grid Voltage L1\" unit=\"V\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1002\"/>\n         <Calculate decimals=\"1\" scaling=\"10\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Grid Current L1\" unit=\"A\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1004\"/>\n         <Calculate decimals=\"3\" scaling=\"1000\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Active Power\" unit=\"kW\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1008\"/>\n         <Calculate decimals=\"0\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Power Factor\" unit=\"%25\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1010\"/>\n         <Calculate decimals=\"3\" scaling=\"1000\"/>\n         <Enum/>\n      </Point>\n      <Point id=\"0\" name=\"Energy Total\" unit=\"kWh\">\n         <Type>ShowValue</Type>\n         <Address format=\"U16\" type=\"Holding\" index=\"1012\"/>\n         <Calculate decimals=\"0\"/>\n         <Enum/>\n      </Point>\n   </Group>\n</ControllerTemplate>\n"
@@ -668,7 +836,11 @@
         "scaling": "1",
         "decimals": "2",
         "min_val": "45",
-        "max_val": "55"
+        "max_val": "55",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Grid Voltage L1",
@@ -681,7 +853,11 @@
         "scaling": "10",
         "decimals": "1",
         "min_val": "0",
-        "max_val": "500"
+        "max_val": "500",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Active Power",
@@ -694,7 +870,11 @@
         "scaling": "1000",
         "decimals": "1",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       },
       {
         "point_name": "Energy Total",
@@ -707,7 +887,11 @@
         "scaling": "1",
         "decimals": "0",
         "min_val": "",
-        "max_val": ""
+        "max_val": "",
+        "enumeration": "",
+        "reg_count": "",
+        "notes": "",
+        "bitmask": ""
       }
     ],
     "name": "Sample Netbiter Export",
@@ -797,7 +981,7 @@
         "max_val": ""
       },
       "errors": {
-        "data_format": "Invalid - choose: Bool, Float, S16, S32, U16, U32, U64"
+        "data_format": "Invalid - choose: Bool, Float, S16, S32, String, U16, U32, U64"
       }
     },
     {
@@ -863,7 +1047,7 @@
         "max_val": ""
       },
       "errors": {
-        "decimals": "Must be 0–9."
+        "decimals": "Must be 0\u20139."
       }
     },
     {
@@ -880,7 +1064,7 @@
         "max_val": ""
       },
       "errors": {
-        "decimals": "Must be an integer 0–9."
+        "decimals": "Must be an integer 0\u20139."
       }
     },
     {

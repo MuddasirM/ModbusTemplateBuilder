@@ -18,6 +18,13 @@ import { PreviewStep } from './steps/PreviewStep';
 export type Step = 'import' | 'mapping' | 'edit' | 'preview';
 export type Source = 'csv' | 'xml';
 
+const STEP_HINTS: Record<Step, string> = {
+  import:  'Pick a format, then drop your register map (.csv / .xlsx), or load an existing template (.xml) to skip straight to editing.',
+  mapping: 'Map each column to a template field. Required fields (*) must be mapped; unmapped optional fields use the default value shown.',
+  edit:    'Edit cells inline. Drag the ⠿ handles to reorder rows and groups. Validation errors block export and are listed in the issues panel.',
+  preview: 'Inspect the output before saving. Switch between XML and Spreadsheet views; download either format from the footer.',
+};
+
 // Point and Group with stable IDs for DnD key stability.
 export interface PointState {
   id: string;
@@ -198,6 +205,17 @@ export function App() {
       />
       <main className="app-main">
         <div className="app-content">
+          <div className="step-hint-bar">
+            <span className="step-hint-text">{STEP_HINTS[step]}</span>
+            <button
+              type="button"
+              className="link-btn step-hint-link"
+              onClick={() => setHelpOpen(true)}
+              aria-label="Open how-to-use guide"
+            >
+              ? guide
+            </button>
+          </div>
           {step === 'import' && (
             <ImportStep
               variants={VARIANTS}

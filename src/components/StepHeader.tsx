@@ -82,6 +82,7 @@ export function StepHeader({ step, source, onOpenHelp, onOpenFeedback }: Props) 
           className="btn btn-ghost btn-sm help-btn"
           onClick={onOpenHelp}
           title="How to use"
+          aria-label="How to use"
         >
           ?
         </button>

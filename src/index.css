@@ -381,6 +381,29 @@ a:hover { color: var(--c-accent-hover); }
 .w-full  { width: 100%; }
 .text-center { text-align: center; }
 
+/* ── Step hint bar ──────────────────────────────────────── */
+.step-hint-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.6875rem;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--c-border-muted);
+  flex-shrink: 0;
+}
+
+.step-hint-text {
+  color: var(--c-ink-dim);
+  line-height: 1.5;
+}
+
+.step-hint-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ── Drop zone ──────────────────────────────────────────── */
 .drop-zone {
   border: 1px dashed var(--c-border);
@@ -456,6 +479,13 @@ a:hover { color: var(--c-accent-hover); }
 
 .register-table thead th:hover .col-clear-btn { opacity: 1; }
 .register-table thead th .col-clear-btn:hover { color: var(--c-danger); }
+
+.col-hint {
+  cursor: help;
+  opacity: 0.55;
+  font-size: 0.8em;
+  margin-left: 2px;
+}
 
 .register-table tbody tr {
   border-bottom: 1px solid var(--c-border-muted);
@@ -1204,6 +1234,12 @@ pre.xml-preview {
   font-style: italic;
 }
 
+.help-alias-note-below {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+}
+
 /* ── Feedback dialog ─────────────────────────────────────── */
 .feedback-dialog {
   position: fixed;
@@ -1497,6 +1533,23 @@ pre.xml-preview {
 /* ── Dragging ghost ──────────────────────────────────────── */
 .row-dragging td { background: var(--c-surface-raised); }
 
+/* ── Issue-jump row highlight (flash + fade) ─────────────── */
+@keyframes row-jump-flash {
+  0%, 55% { background: color-mix(in oklch, var(--c-accent) 28%, var(--c-surface)); }
+  100%    { background: transparent; }
+}
+.register-table tbody tr.row-jump-highlight td {
+  animation: row-jump-flash 1.8s ease-out forwards;
+}
+.register-table tbody tr.row-jump-highlight td.cell-invalid {
+  animation: none;
+  background: var(--c-danger-subtle);
+}
+.register-table tbody tr.row-jump-highlight td.cell-warning {
+  animation: none;
+  background: var(--c-warning-subtle);
+}
+
 .drag-overlay-table {
   box-shadow: 0 8px 24px oklch(0 0 0 / 0.60);
   opacity: 0.95;
@@ -1677,17 +1730,128 @@ pre.xml-preview {
   flex-shrink: 0;
 }
 
-/* ── Error summary bar ───────────────────────────────────── */
-.error-summary-bar {
+/* ── Row-level selection highlight (multi-select mode) ────── */
+.register-table tbody tr.row-selected td {
+  background: color-mix(in oklch, var(--c-accent) 12%, var(--c-surface));
+}
+.register-table tbody tr.row-selected:hover td {
+  background: color-mix(in oklch, var(--c-accent) 18%, var(--c-surface));
+}
+
+/* ── Row-level error tint ────────────────────────────────── */
+.register-table tbody tr.row-has-errors td {
+  background: color-mix(in oklch, var(--c-danger) 7%, var(--c-bg));
+}
+.register-table tbody tr.row-has-errors:hover td {
+  background: color-mix(in oklch, var(--c-danger) 11%, var(--c-surface));
+}
+.register-table tbody tr.row-has-errors td.cell-invalid {
+  background: var(--c-danger-subtle);
+}
+.register-table tbody tr.row-has-errors td.cell-warning {
+  background: var(--c-warning-subtle);
+}
+
+/* ── Issues panel (collapsible error / warning cards) ─── */
+.issues-panel {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.issues-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 0;
+  width: 100%;
+  padding: 5px 12px;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-family: var(--f-mono);
+  border: none;
+  border-bottom: 1px solid var(--c-border-muted);
+  cursor: pointer;
+  transition: background-color 0.1s ease-out;
 }
 
-.error-summary-bar .warning-count-muted {
+.issues-header-error {
+  background: var(--c-danger-subtle);
+  color: var(--c-danger);
+}
+.issues-header-error:hover {
+  background: color-mix(in oklch, var(--c-danger) 14%, var(--c-surface));
+}
+
+.issues-header-warning {
+  background: var(--c-warning-subtle);
+  color: var(--c-warning);
+}
+.issues-header-warning:hover {
+  background: color-mix(in oklch, var(--c-warning) 14%, var(--c-surface));
+}
+
+.issues-header:focus-visible,
+.issues-item:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+
+.issues-count { font-weight: 700; }
+
+.issues-toggle {
+  margin-left: auto;
+  font-size: 0.5rem;
+  opacity: 0.6;
+}
+
+.issues-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.issues-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 12px;
+  text-align: left;
+  font-size: 0.625rem;
+  font-family: var(--f-mono);
+  border: none;
+  border-bottom: 1px solid var(--c-border-muted);
+  background: transparent;
+  cursor: pointer;
+  color: var(--c-ink-muted);
+  transition: background-color 0.08s ease-out;
+}
+.issues-item:last-child { border-bottom: none; }
+.issues-item:hover { background: var(--c-surface-raised); }
+
+.issues-item-name {
+  font-weight: 600;
+  color: var(--c-ink);
+  flex-shrink: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.issues-item-sep  { color: var(--c-ink-dim); flex-shrink: 0; }
+.issues-item-field {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.issues-item-error .issues-item-field   { color: var(--c-danger); }
+.issues-item-warning .issues-item-field { color: var(--c-warning); }
+.issues-item-msg {
   color: var(--c-ink-dim);
-  font-weight: 400;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Reduced motion ──────────────────────────────────────── */
@@ -1697,13 +1861,21 @@ pre.xml-preview {
   .register-table .field-input,
   .register-table .field-select,
   .register-table tbody tr,
+  .register-table tbody tr.row-jump-highlight td,
   .register-table thead th .col-clear-btn,
   .help-col,
   .hint-col-cycle,
   .scan-bead,
-  .export-log-line {
+  .export-log-line,
+  .issues-header,
+  .issues-item {
     transition: none !important;
     animation: none !important;
+  }
+
+  /* Show the highlight as a static tint instead of a flash. */
+  .register-table tbody tr.row-jump-highlight td {
+    background: color-mix(in oklch, var(--c-accent) 20%, var(--c-surface));
   }
 
   /* Static fill instead of a sweep - still reads as "in progress". */

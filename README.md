@@ -149,8 +149,8 @@ npm run dev        # http://localhost:5173
 2. **XML path:** import `../sample_argos_template.xml` → lands straight in the
    editor → bump addresses → Preview → confirm `id`/`uid` are reset to `0`.
 
-> Spreadsheet import follows the **ANPL** format and requires a `No.` column;
-> this matches the desktop app (a CSV without `No.` yields an empty template).
+> The header row is auto-detected by scanning the first six rows for a row that contains
+> both a name column and an address column; metadata rows above the header are skipped automatically.
 
 ## Scripts
 
@@ -165,5 +165,5 @@ npm run dev        # http://localhost:5173
 
 `src/core/variants/argos/__tests__/parity.test.ts` and `src/io/__tests__/readSpreadsheet.test.ts`
 assert the TS port matches a set of pre-generated fixtures
-(`src/core/__tests__/fixtures/parity.json`) byte-for-byte, locking the port
+(`src/core/variants/argos/__tests__/fixtures/parity.json`) byte-for-byte, locking the port
 to the original implementation's exact output.

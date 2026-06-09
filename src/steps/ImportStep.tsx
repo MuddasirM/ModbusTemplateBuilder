@@ -153,7 +153,7 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
       </div>
 
       <p className="import-hint">
-        <p>{'column names are matched flexibly.'}</p>
+        {'column names are matched flexibly. '}
         {CYCLING_HINTS.map((aliases, i) => {
           const name = aliases[hintIndices[i]];
           return (
@@ -164,7 +164,7 @@ export function ImportStep({ variants, variant, setVariant, onCsv, onXml, error,
           );
         })}
       </p>
-            <p className="import-help-link">
+      <p className="import-help-link">
         New here? Open the <button type="button" className="link-btn" onClick={onOpenHelp}>how-to-use</button> guide, also reachable any time via the <em>?</em> button in the top right.
       </p>
       </>

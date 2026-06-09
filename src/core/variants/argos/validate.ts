@@ -41,6 +41,14 @@ export function validateRow(
       else if (!(r.value >= 0 && r.value <= 9)) errors[f.key] = 'Must be 0–9.';
     } else if (f.key === 'min_val' || f.key === 'max_val') {
       if (!pyFloat(val).ok) errors[f.key] = 'Must be a number.';
+    } else if (f.key === 'reg_count') {
+      const r = pyInt(val);
+      if (!r.ok) errors[f.key] = 'Must be an integer.';
+      else if (r.value <= 0) errors[f.key] = 'Must be a positive integer.';
+    } else if (f.key === 'bitmask') {
+      if (!/^(0x[0-9a-fA-F]+|\d+)$/i.test(val)) {
+        errors[f.key] = 'Must be a hex value (e.g. 0x0001) or integer.';
+      }
     }
   }
 

@@ -41,9 +41,9 @@ rows above the header are handled without manual intervention.
 
 **Step 2: Map**
 Each field declared by the selected output format is matched to a column in
-your spreadsheet (for Argos, the 10 canonical register fields).
+your spreadsheet (for Argos, the 15 canonical register fields).
 Auto-mapping runs first: it normalises column names (lowercase, strip
-spaces/underscores) and checks them against a table of 52 known aliases
+spaces/underscores) and checks them against a table of 139 known aliases
 before falling back to fuzzy substring matching. In most cases all
 required fields are mapped before the user touches anything.
 
@@ -90,7 +90,7 @@ backend involved.
 ## Column auto-mapping
 
 The mapper normalises column names by lowercasing and stripping spaces and
-underscores, then checks against a 52-entry alias table. If no exact alias
+underscores, then checks against a 139-entry alias table. If no exact alias
 match is found, it falls back to case-insensitive substring matching against
 both the field key and its human label.
 
@@ -99,6 +99,7 @@ Selected aliases per field:
 | Field | Primary name | Recognised aliases (sample) |
 |---|---|---|
 | Point Name | Name | Point Name, Description, Tag Name, Signal Name |
+| Point Type | Presentation | Point Type, Tag Type |
 | Register Address | Address(0x) | Address, Addr, Register, Register Index, Modbus Address, Modbus Register |
 | Register Type | Attribute | Attr, Register Type, Reg. Type, Function Code |
 | Data Format | Data Format | Data Type, Dtype, Format, Type, Word Format, Value Type |
@@ -108,6 +109,10 @@ Selected aliases per field:
 | Group | Group | Group Name, Category, Section |
 | Min | Min | Min Value, Minimum, Low Limit, Low Range |
 | Max | Max | Max Value, Maximum, High Limit, High Range |
+| Enumeration | Enumeration | Enum, Enum Values, Enum List, State Map, Value Map, States |
+| Reg. Count | Reg. Count | Reg Count, Register Length, String Length, Num Registers, Length, Word Count |
+| Bitmask | Bitmask | Mask, Bit Field, Bitmask Value, Bitmask Filter |
+| Notes | Notes | Note, Comment, Comments, Remark, Remarks (display only, not in XML) |
 
 Matching is case-insensitive and ignores spaces, so `RegisterAddress`,
 `register address`, and `REGISTER_ADDRESS` all resolve to the same field.
@@ -142,14 +147,17 @@ Before generating XML, every row is validated:
 
 - Point Name and Register Address: required, non-empty
 - Register Address: non-negative integer
-- Data Format: must be one of `U16 S16 U32 S32 U64 Float`
-- Register Type: must be one of `Holding Input Coil Discrete`
+- Point Type: must be one of `ShowValue ShowEnum SetValue SetValueWO SetEnum` if set
+- Data Format: must be one of `U16 S16 U32 S32 U64 Float Bool String` if set
+- Register Type: must be one of `Holding Input Coil Discrete` if set
 - Scaling: must be a valid number
-- Decimals: integer in range 0–9
+- Decimals: integer in range 0-9
 - Min / Max: must be valid numbers if present
+- Enumeration: each item must follow `key=label` format with a non-negative integer key (warning, not a hard error)
+- Reg. Count: positive integer if set; a warning is also raised when Data Format is `String` and Reg. Count is empty
+- Bitmask: hex literal (e.g. `0x0001`) or plain integer if set; a warning is also raised when set alongside a non-enum Point Type
 
-Validation errors are shown per-cell with a tooltip explaining the specific
-problem. Export is blocked until all errors are resolved.
+Validation errors (red) block export. Warnings (amber) are shown inline but do not block export.
 
 ---
 

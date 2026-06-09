@@ -51,9 +51,13 @@ or "clean up" `format.ts`** (`pyRound`,
 behavior (Python-style rounding, `%g`-style formatting, `%` escaped to
 `%25`) is the contract the fixtures lock in, not an implementation detail.
 
-`ARGOS_FIELDS` (`src/core/variants/argos/fields.ts`) is the canonical 10-field
-schema: `point_name, register_index, group_name, register_type, data_format,
-unit, scaling, decimals, min_val, max_val`.
+`ARGOS_FIELDS` (`src/core/variants/argos/fields.ts`) is the canonical 15-field
+schema: `point_name`, `point_type`, `register_index`, `group_name`,
+`register_type`, `data_format`, `unit`, `scaling`, `decimals`, `min_val`,
+`max_val`, `enumeration`, `reg_count`, `bitmask`, `notes`. Notes:
+- `notes` is display-only and is never emitted to XML.
+- `reg_count` emits as the `length` attribute on `<Address>` (needed for `String` data-type points).
+- `bitmask` emits as the `bitmask` attribute on `<Address>` (used with `ShowEnum` points where multiple logical points share one register, each masking a different bit).
 
 ## Important gotchas
 
